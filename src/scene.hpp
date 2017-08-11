@@ -842,17 +842,6 @@ namespace rt {
 		std::unique_ptr<AreaUniformSampler> _areaUniformSampler;
 	};
 
-	// utility
-	class Stopwatch {
-	public:
-		Stopwatch() :_beginAt(std::chrono::high_resolution_clock::now()) {
-		}
-		std::chrono::milliseconds elapsedMilliseconds() const {
-			auto n = std::chrono::high_resolution_clock::now();
-			return std::chrono::duration_cast<std::chrono::milliseconds>(n - _beginAt);
-		}
-	private:
-		std::chrono::high_resolution_clock::time_point _beginAt;
-	};
+
 
 }

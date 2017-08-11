@@ -6,6 +6,7 @@
 #include "scene.hpp"
 #include "conelbox.hpp"
 #include "path_tracing.hpp"
+#include "stopwatch.hpp"
 
 class ofApp : public ofBaseApp{
 public:

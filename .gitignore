@@ -54,3 +54,5 @@ tbbmalloc.dll
 tbbmalloc_debug.dll
 tbbmalloc_proxy.dll
 tbbmalloc_proxy_debug.dll
+
+imgui.ini

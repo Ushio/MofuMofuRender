@@ -2,6 +2,7 @@
 #include <atomic>
 #include <algorithm>
 
+// 基本的な擬似乱数
 namespace rt {
 	struct PeseudoRandom {
 		virtual ~PeseudoRandom() {}

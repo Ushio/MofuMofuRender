@@ -86,7 +86,7 @@ void ofApp::draw(){
 
 	ImGui::Begin("Config Panel");
 	ImGui::Text("fps: %.2f", ofGetFrameRate());
-	ImGui::Text("time: %.2f", (double)_sw->elapsedMilliseconds().count() * 0.001);
+	ImGui::Text("time: %.2f", _sw->elapsed());
 	auto wp = ImGui::GetWindowPos();
 	auto ws = ImGui::GetWindowSize();
 	ofRectangle win(wp.x, wp.y, ws.x, ws.y);
@@ -102,7 +102,7 @@ void ofApp::draw(){
 		_camera.enableMouseInput();
 	}
 
-	if (1000 * 100 < _sw->elapsedMilliseconds().count()) {
+	if (100 < _sw->elapsed()) {
 		static bool write = false;
 		if (write == false) {
 			write = true;

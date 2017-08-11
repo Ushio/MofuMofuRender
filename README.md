@@ -1,5 +1,7 @@
 # MofuMofuRender for rtcamp5
 # dependencies
+git submodule update --init
+
 ofxImGui
 https://github.com/jvcleave/ofxImGui/releases/tag/1.50
 
