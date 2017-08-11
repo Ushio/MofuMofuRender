@@ -4,9 +4,6 @@
 [submodule "libs/Optional"]
 	path = libs/Optional
 	url = https://github.com/akrzemi1/Optional.git
-[submodule "tinyobjloader"]
-	path = tinyobjloader
-	url = https://github.com/syoyo/tinyobjloader.git
 [submodule "libs/tinyobjloader"]
 	path = libs/tinyobjloader
 	url = https://github.com/syoyo/tinyobjloader.git
