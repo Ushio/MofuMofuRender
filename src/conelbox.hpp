@@ -1,6 +1,6 @@
 #pragma once
 
-#include "raytracing_kernel.hpp"
+#include "scene.hpp"
 
 inline std::shared_ptr<rt::Scene> scene_conelbox() {
 	rt::CameraSetting cameraSetting;

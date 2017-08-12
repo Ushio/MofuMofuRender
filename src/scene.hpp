@@ -99,6 +99,9 @@ namespace rt {
 		yaxis = glm::cross(zaxis, xaxis);
 		return glm::transpose(Mat3(xaxis, yaxis, zaxis));
 	}
+	inline Mat3 from_bxdf_basis_transform(const Vec3 &n) {
+		return glm::transpose(to_bxdf_basis_transform(n));
+	}
 
 	inline Vec3 from_bxdf(const Vec3 &n, const Vec3 &bxdf_dir) {
 		return glm::transpose(to_bxdf_basis_transform(n)) * bxdf_dir;
