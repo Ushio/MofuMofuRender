@@ -172,7 +172,18 @@ void ofApp::draw(){
 
 		double tmin = std::numeric_limits<double>::max();
 		rt::CurveIntersection intersection;
-		if (rt::intersect_bezier(15, radius, radius * radius, bezier, bezier, 0.0, 1.0, &tmin, &intersection)) {
+
+		bool intersected = rt::intersect_bezier(15, radius, radius * radius, bezier, bezier, 0.0, 1.0, &tmin, &intersection);
+
+		// origin rejection
+		if (intersected) {
+			auto tangent = bezier.tangent(intersection.bezier_t);
+			auto p = bezier.evaluate(intersection.bezier_t);
+			if (rt::distanceSqPointRay(rt::Vec3(0.0), p, tangent) < radius * radius) {
+				intersected = false;
+			}
+		}
+		if (intersected) {
 			if (intersection.h < 0.0) {
 				ofSetColor(ofColor::red * glm::abs(intersection.h));
 			}

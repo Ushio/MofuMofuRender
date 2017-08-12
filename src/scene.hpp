@@ -12,11 +12,12 @@
 
 #include "peseudo_random.hpp"
 #include "geometry.hpp"
+#include "bezier.hpp"
 //#include "bvh.hpp"
 //#include "bezier.hpp"
 //#include "bezier_bvh.hpp"
 //#include "halton_sampler.h"
-//#include "hairfur.hpp"
+#include "hairfur.hpp"
 
 /*
 約束
@@ -40,12 +41,18 @@ namespace rt {
 		}
 	};
 
-	class SpecularMaterial{
+	class SpecularMaterial {
 	public:
 		
 	};
 
-	using Material = mapbox::util::variant<LambertianMaterial, SpecularMaterial>;
+	class Fur {
+	public:
+		Vec3 tangent;
+		double h = 0.0;
+	};
+
+	using Material = mapbox::util::variant<LambertianMaterial, SpecularMaterial, Fur>;
 
 	inline Vec3 uniform_on_triangle(rt::PeseudoRandom *random, const Vec3 &a, const Vec3 &b, const Vec3 &c) {
 		auto u = random->uniform();
@@ -426,6 +433,65 @@ namespace rt {
 		
 		// ライトサンプル用
 		std::unique_ptr<AreaUniformSampler> _areaUniformSampler;
+	};
+
+	class BezierSceneElement : public SceneElement {
+	public:
+		BezierSceneElement(std::vector<BezierQuadratic3D> beziers)
+			:_beziers(beziers) {
+		}
+
+		bool intersect(const Ray &ray, Material *mat, Intersection *intersection, double *tmin) const override {
+			double radius = 0.02;
+			auto projection = rt::ray_projection(ray.o, ray.d);
+
+			bool intersected = false;
+			for (int i = 0; i < _beziers.size(); ++i) {
+				auto bezier = _beziers[i].transform(projection);
+
+				rt::CurveIntersection thisIntersection;
+				bool intersected = rt::intersect_bezier(7, radius, radius * radius, bezier, bezier, 0.0, 1.0, tmin, &thisIntersection);
+				Vec3 tangent;
+
+				// origin rejection
+				if (intersected) {
+					tangent = bezier.tangent(thisIntersection.bezier_t);
+					auto p = bezier.evaluate(thisIntersection.bezier_t);
+					if (rt::distanceSqPointRay(rt::Vec3(0.0), p, tangent) < radius * radius) {
+						intersected = false;
+					}
+				}
+				if (intersected) {
+					Fur fur;
+					fur.h = thisIntersection.h;
+					fur.tangent = glm::normalize(tangent);
+					*mat = fur;
+					*intersection = Intersection();
+					intersected = true;
+				}
+			}
+			return intersected;
+		}
+
+		double emissiveArea() const override {
+			return 0.0;
+		}
+
+		void sampleEmissive(Vec3 *p, Vec3 *n, Vec3 *emissiveRadiance, PeseudoRandom *random) const override {
+			assert(0);
+		}
+		void drawPreview(std::function<void(const Vec3 &, const Vec3 &)> drawLine) const override {
+			//for (int i = 0; i < _indices.size(); i += 3) {
+			//	const Vec3 &v0 = _vertices[_indices[i + 0]];
+			//	const Vec3 &v1 = _vertices[_indices[i + 1]];
+			//	const Vec3 &v2 = _vertices[_indices[i + 2]];
+			//	drawLine(v0, v1);
+			//	drawLine(v1, v2);
+			//	drawLine(v2, v0);
+			//}
+		}
+
+		std::vector<BezierQuadratic3D> _beziers;
 	};
 
 	//class BVHPolygonSceneElement : public SceneElement {

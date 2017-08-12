@@ -35,9 +35,11 @@ namespace rt {
 	}
 
 	/*
+	レイとレイの最近傍距離を返す
 	rt::Vec3 p1 = Vec3(0, 0, 0);
 	rt::Vec3 d1 = Vec3(0, 0, 1);
 	のケース
+	レイは正規化されている必要はない
 	*/
 	inline double distanceRayRay(rt::Vec3 p2, rt::Vec3 d2) {
 		Vec3 r = - p2;
@@ -61,6 +63,20 @@ namespace rt {
 		auto c2 = p2 + d2 * t;
 		return glm::distance(c1, c2);
 	}
+
+	// 与えられた線分abおよび点cに対して、ab上の最近接点dを計算
+	// d(t) = a + t*(b - a) により表されるdの位置に対するtも返す
+	// ちょっとまだ最適化の余地がある
+	// 
+	inline double distanceSqPointRay(Vec3 c, Vec3 o, Vec3 d)
+	{
+		// パラメータ化されている位置 d(t) = a + t*(b - a) の計算によりabにcを射影
+		double t = glm::dot(c - o, d) / glm::dot(d, d);
+		// クランプされているtからの射影されている位置を計算
+		Vec3 p = o + t * d;
+		return glm::distance2(p, c);
+	}
+
 
 	struct MoveAndRotate {
 		MoveAndRotate() {}
