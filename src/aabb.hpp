@@ -16,6 +16,10 @@ namespace rt {
 			}
 		}
 
+		void expand(const AABB &aabb) {
+			min_position = glm::min(min_position, aabb.min_position);
+			max_position = glm::max(max_position, aabb.max_position);
+		}
 		void expand(const Vec3 &p) {
 			min_position = glm::min(min_position, p);
 			max_position = glm::max(max_position, p);

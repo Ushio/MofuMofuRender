@@ -18,6 +18,7 @@
 //#include "bezier_bvh.hpp"
 //#include "halton_sampler.h"
 #include "hairfur.hpp"
+#include "bezierbvh.hpp"
 
 /*
 約束
@@ -442,7 +443,8 @@ namespace rt {
 		}
 
 		bool intersect(const Ray &ray, Material *mat, Intersection *intersection, double *tmin) const override {
-			double radius = 0.02;
+			// double radius = 0.02;
+			double radius = 0.005;
 			auto projection = rt::ray_projection(ray.o, ray.d);
 
 			bool intersected = false;
@@ -450,7 +452,7 @@ namespace rt {
 				auto bezier = _beziers[i].transform(projection);
 
 				rt::CurveIntersection thisIntersection;
-				bool intersected = rt::intersect_bezier(7, radius, radius * radius, bezier, bezier, 0.0, 1.0, tmin, &thisIntersection);
+				bool intersected = rt::intersect_bezier(4, radius, radius * radius, bezier, bezier, 0.0, 1.0, tmin, &thisIntersection);
 				Vec3 tangent;
 
 				// origin rejection
@@ -481,18 +483,95 @@ namespace rt {
 			assert(0);
 		}
 		void drawPreview(std::function<void(const Vec3 &, const Vec3 &)> drawLine) const override {
-			//for (int i = 0; i < _indices.size(); i += 3) {
-			//	const Vec3 &v0 = _vertices[_indices[i + 0]];
-			//	const Vec3 &v1 = _vertices[_indices[i + 1]];
-			//	const Vec3 &v2 = _vertices[_indices[i + 2]];
-			//	drawLine(v0, v1);
-			//	drawLine(v1, v2);
-			//	drawLine(v2, v0);
-			//}
+			std::array<Vec3, 6> pts;
+			for (int i = 0; i < _beziers.size(); ++i) {
+				for (int j = 0; j < pts.size(); ++j) {
+					double s = 1.0 / (pts.size() - 1);
+					pts[j] = _beziers[i].evaluate(s * j);
+				}
+				for (int j = 1; j < pts.size(); ++j) {
+					drawLine(pts[j - 1], pts[j]);
+				}
+			}
 		}
 
 		std::vector<BezierQuadratic3D> _beziers;
 	};
+
+	class BezierBVHSceneElement : public SceneElement {
+	public:
+		BezierBVHSceneElement(std::vector<BezierEntity> beziers)
+			:_beziers(beziers) {
+			_bvh = std::shared_ptr<BezierBVH>(new BezierBVH(beziers));
+		}
+
+		bool intersect(const Ray &ray, Material *mat, Intersection *intersection, double *tmin) const override {
+			BVHBezierIntersection thisIntersection;
+			if (_bvh->intersect(ray, &thisIntersection, tmin)) {
+				Fur fur;
+				fur.h = thisIntersection.h;
+				fur.tangent = thisIntersection.tangent;
+				*mat = fur;
+				*intersection = Intersection();
+				return true;
+			}
+			return false;
+
+			//double radius = 0.02;
+			//auto projection = rt::ray_projection(ray.o, ray.d);
+
+			//bool intersected = false;
+			//for (int i = 0; i < _beziers.size(); ++i) {
+			//	auto bezier = _beziers[i].transform(projection);
+
+			//	rt::CurveIntersection thisIntersection;
+			//	bool intersected = rt::intersect_bezier(7, radius, radius * radius, bezier, bezier, 0.0, 1.0, tmin, &thisIntersection);
+			//	Vec3 tangent;
+
+			//	// origin rejection
+			//	if (intersected) {
+			//		tangent = bezier.tangent(thisIntersection.bezier_t);
+			//		auto p = bezier.evaluate(thisIntersection.bezier_t);
+			//		if (rt::distanceSqPointRay(rt::Vec3(0.0), p, tangent) < radius * radius) {
+			//			intersected = false;
+			//		}
+			//	}
+			//	if (intersected) {
+			//		Fur fur;
+			//		fur.h = thisIntersection.h;
+			//		fur.tangent = glm::normalize(tangent);
+			//		*mat = fur;
+			//		*intersection = Intersection();
+			//		intersected = true;
+			//	}
+			//}
+			//return intersected;
+		}
+
+		double emissiveArea() const override {
+			return 0.0;
+		}
+
+		void sampleEmissive(Vec3 *p, Vec3 *n, Vec3 *emissiveRadiance, PeseudoRandom *random) const override {
+			assert(0);
+		}
+		void drawPreview(std::function<void(const Vec3 &, const Vec3 &)> drawLine) const override {
+			std::array<Vec3, 6> pts;
+			for (int i = 0; i < _beziers.size(); ++i) {
+				for (int j = 0; j < pts.size(); ++j) {
+					double s = 1.0 / (pts.size() - 1);
+					pts[j] = _beziers[i].bezier.evaluate(s * j);
+				}
+				for (int j = 1; j < pts.size(); ++j) {
+					drawLine(pts[j - 1], pts[j]);
+				}
+			}
+		}
+
+		std::vector<BezierEntity> _beziers;
+		std::shared_ptr<BezierBVH> _bvh;
+	};
+
 
 	//class BVHPolygonSceneElement : public SceneElement {
 	//public:

@@ -39,15 +39,51 @@ void ofApp::setup() {
 	_sw = std::shared_ptr<rt::Stopwatch>(new rt::Stopwatch());
 	_scene = scene_conelbox();
 
-	std::vector<rt::BezierQuadratic3D> beziers;
-	rt::Xor random;
-	for (int i = 0; i < 10; ++i) {
-		auto p = rt::uniform_in_unit_circle(&random);
-		rt::BezierQuadratic3D bz(rt::Vec3(p.x, -1.0, p.y), rt::Vec3(0.0, random.uniform(0.2, 0.0), 0.0), rt::Vec3(-p.x, -1.0, -p.y));
-		beziers.push_back(bz);
+	//{
+	//	std::vector<rt::BezierQuadratic3D> beziers;
+	//	rt::Xor random;
+	//	for (int i = 0; i < 5000; ++i) {
+	//		//auto p = rt::uniform_in_unit_circle(&random);
+	//		//rt::BezierQuadratic3D bz(rt::Vec3(p.x, -1.0, p.y), rt::Vec3(0.0, random.uniform(0.2, 0.0), 0.0), rt::Vec3(-p.x, -1.0, -p.y));
+	//		//beziers.push_back(bz);
+
+	//		auto p = rt::uniform_in_unit_circle(&random);
+	//		auto p1 = rt::Vec3(p.x, -1.0, p.y);
+	//		auto cp = p1 + rt::Vec3(random.uniform(-0.1, 0.1), 0.3, random.uniform(-0.1, 0.1));
+	//		auto p2 = cp + rt::Vec3(random.uniform(-0.1, 0.1), 0.3, random.uniform(-0.1, 0.1));
+
+	//		rt::BezierQuadratic3D bz(p1, cp, p2);
+
+	//		rt::BezierEntity e;
+	//		e.bezier = bz;
+	//		e.sigma_a = rt::Vec3();
+	//		e.radius = 0.005;
+	//		beziers.push_back(bz);
+	//	}
+	//	std::shared_ptr<rt::BezierSceneElement> element(new rt::BezierSceneElement(beziers));
+	//	_scene = _scene->addElement(element);
+	//}
+
+	{
+		std::vector<rt::BezierEntity> beziers;
+		rt::Xor random;
+		for (int i = 0; i < 5000; ++i) {
+			auto p = rt::uniform_in_unit_circle(&random);
+			auto p1 = rt::Vec3(p.x, -1.0, p.y);
+			auto cp = p1 + rt::Vec3(random.uniform(-0.1, 0.1), 0.3, random.uniform(-0.1, 0.1));
+			auto p2 = cp + rt::Vec3(random.uniform(-0.1, 0.1), 0.3, random.uniform(-0.1, 0.1));
+
+			rt::BezierQuadratic3D bz(p1, cp, p2);
+
+			rt::BezierEntity e;
+			e.bezier = bz;
+			e.sigma_a = rt::Vec3();
+			e.radius = 0.005;
+			beziers.push_back(e);
+		}
+		std::shared_ptr<rt::BezierBVHSceneElement> element(new rt::BezierBVHSceneElement(beziers));
+		_scene = _scene->addElement(element);
 	}
-	std::shared_ptr<rt::BezierSceneElement> element(new rt::BezierSceneElement(beziers));
-	_scene = _scene->addElement(element);
 
 	_pt = std::shared_ptr<rt::PathTracer>(new rt::PathTracer(_scene));
 
@@ -56,13 +92,16 @@ void ofApp::setup() {
 
 //--------------------------------------------------------------
 void ofApp::update(){
+	rt::Stopwatch sw;
 	_pt->step();
+	printf("step: %.2f\n", sw.elapsed());
 	
 #if NO_WINDOW == 0
-	if (ofGetFrameNum() % 30 == 0) {
-		_image.setFromPixels(toOf(_pt->_image));
-	}
-#endif
+	//if (ofGetFrameNum() % 30 == 0) {
+	//	_image.setFromPixels(toOf(_pt->_image));
+	//}
+	_image.setFromPixels(toOf(_pt->_image));
+#else
 	if (_sw->elapsed() > 29.0) {
 		static int index = 0;
 
@@ -80,6 +119,7 @@ void ofApp::update(){
 	if (_finSw->elapsed() > 60.0 * 4.0 + 33.0) {
 		std::exit(0);
 	}
+#endif
 }
 
 //--------------------------------------------------------------

@@ -8,7 +8,7 @@
 #include "path_tracing.hpp"
 #include "stopwatch.hpp"
 
-#define NO_WINDOW 1
+#define NO_WINDOW 0
 
 class ofApp : public ofBaseApp{
 public:
