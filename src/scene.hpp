@@ -79,19 +79,19 @@ namespace rt {
 		return f0 + (1.0 - f0) * glm::pow(1.0 - NoL, 5.0);
 	}
 
-	// directionを yaxisに基底変換
-	inline Vec3 basis_transform(const Vec3 &direction, const Vec3 &yaxis) {
-		Vec3 xaxis;
-		Vec3 zaxis;
-		if (0.999 < glm::abs(yaxis.z)) {
-			xaxis = glm::normalize(glm::cross(Vec3(0.0, -1.0, 0.0), yaxis));
-		}
-		else {
-			xaxis = glm::normalize(glm::cross(Vec3(0.0, 0.0, 1.0), yaxis));
-		}
-		zaxis = glm::cross(xaxis, yaxis);
-		return direction.x * xaxis + direction.y * yaxis + direction.z * zaxis;
-	}
+	//// directionを yaxisに基底変換
+	//inline Vec3 basis_transform(const Vec3 &direction, const Vec3 &yaxis) {
+	//	Vec3 xaxis;
+	//	Vec3 zaxis;
+	//	if (0.999 < glm::abs(yaxis.z)) {
+	//		xaxis = glm::normalize(glm::cross(Vec3(0.0, -1.0, 0.0), yaxis));
+	//	}
+	//	else {
+	//		xaxis = glm::normalize(glm::cross(Vec3(0.0, 0.0, 1.0), yaxis));
+	//	}
+	//	zaxis = glm::cross(xaxis, yaxis);
+	//	return direction.x * xaxis + direction.y * yaxis + direction.z * zaxis;
+	//}
 
 	// zが上の座標系に移動する行列
 	inline Mat3 to_bxdf_basis_transform(const Vec3 &n) {

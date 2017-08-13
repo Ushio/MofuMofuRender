@@ -73,31 +73,10 @@ namespace rt {
 				else if (mat.is<Fur>()) {
 					auto material = mat.get<Fur>();
 
-					//auto wi = from_bxdf(intersection.normal, sample);
-					//auto wo = -ray.d;
-					//auto brdf = bsdf(wi, wo, material.h);
-					//auto cos_term = abs_cos_theta_bxdf(sample);
-
-					//T *= brdf * cos_term / pdf_omega;
-					//ray = Ray(ray.o + ray.d * tmin + wi * 0.000001, wi);
-
 					Vec3 wo = -ray.d;
 					Vec3 wi = uniform_on_unit_sphere(random);
 
-					Vec3 yaxis;
-					Vec3 xaxis = material.tangent;
-					Vec3 zaxis;
-
-					if (0.999 < glm::abs(xaxis.z)) {
-						yaxis = glm::normalize(glm::cross(xaxis, Vec3(0.0, 1.0, 0.0)));
-					}
-					else {
-						yaxis = glm::normalize(glm::cross(xaxis, Vec3(0.0, 0.0, 1.0)));
-					}
-					zaxis = glm::cross(xaxis, yaxis);
-
-					Mat3 from_bsdf(xaxis, yaxis, zaxis);
-					Mat3 to_bsdf = glm::transpose(from_bsdf);
+					auto to_bsdf = to_fur_bsdf_basis_transform(material.tangent);
 
 					// ƒAƒC•ûŒü
 					Vec3 bsdf_wo = to_bsdf * wo;
@@ -106,8 +85,8 @@ namespace rt {
 					Vec3 bsdf_wi = to_bsdf * wi;
 
 					double pdf_omega = 1.0 / (4.0 * glm::pi<double>());
-					Vec3 bsdf_value = bsdf(bsdf_wi, bsdf_wo, material.h);
-					T *= (bsdf_value / pdf_omega) * AbsCosThetaForHair(bsdf_wi);
+					Vec3 bsdf_value = fur_bsdf(bsdf_wi, bsdf_wo, material.h);
+					T *= (bsdf_value / pdf_omega) * AbsCosThetaForFur(bsdf_wi);
 					ray = Ray(ray.o + ray.d * tmin + wi * 0.000001, wi);
 				}
 			}

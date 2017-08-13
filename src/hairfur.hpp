@@ -135,15 +135,32 @@ namespace rt {
 	inline double beta_n_to_s(double beta_n) {
 		static const double SqrtPiOver8 = 0.626657069;		return SqrtPiOver8 * (0.265 * beta_n + 1.194 * Sqr(beta_n) + 5.372 * Pow<22>(beta_n));
 	}
-	inline double AbsCosThetaForHair(const Vec3 &w) {
+	inline double AbsCosThetaForFur(const Vec3 &w) {
 		return glm::sqrt(w.z * w.z + w.y * w.y);
+	}
+
+	inline Mat3 to_fur_bsdf_basis_transform(const Vec3 &tangent) {
+		Vec3 yaxis;
+		Vec3 xaxis = tangent;
+		Vec3 zaxis;
+
+		if (0.999 < glm::abs(xaxis.z)) {
+			yaxis = glm::normalize(glm::cross(xaxis, Vec3(0.0, 1.0, 0.0)));
+		}
+		else {
+			yaxis = glm::normalize(glm::cross(xaxis, Vec3(0.0, 0.0, 1.0)));
+		}
+		zaxis = glm::cross(xaxis, yaxis);
+
+		Mat3 from_bsdf(xaxis, yaxis, zaxis);
+		return glm::transpose(from_bsdf);
 	}
 
 	/*
 	woがカメラ方向
 	wiがライト方向
 	*/
-	inline glm::dvec3 bsdf(glm::dvec3 wi, glm::dvec3 wo, double h) {
+	inline glm::dvec3 fur_bsdf(glm::dvec3 wi, glm::dvec3 wo, double h) {
 		// パラメータはひとまずハードコーディング
 		double eta = 1.55;
 		double beta_n = 0.9;
@@ -212,8 +229,8 @@ namespace rt {
 			fsum += Mp(sinThetaIp, cosThetaIp, sinThetaO, cosThetaO, v[p]) * ap[p] * Np(phi, p, s, gammaO, gammaT);
 		}
 
-		fsum += Mp(cosThetaI, cosThetaO, sinThetaI, sinThetaO, v[pMax]) * ap[pMax] / (2.0 * glm::pi<double>());		if (AbsCosThetaForHair(wi) > 0) {
-			fsum /= AbsCosThetaForHair(wi);
+		fsum += Mp(cosThetaI, cosThetaO, sinThetaI, sinThetaO, v[pMax]) * ap[pMax] / (2.0 * glm::pi<double>());		if (AbsCosThetaForFur(wi) > 0) {
+			fsum /= AbsCosThetaForFur(wi);
 		}
 		return fsum;
 	}

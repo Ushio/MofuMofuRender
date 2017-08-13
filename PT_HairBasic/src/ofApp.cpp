@@ -67,11 +67,11 @@ void ofApp::setup() {
 	{
 		std::vector<rt::BezierEntity> beziers;
 		rt::Xor random;
-		for (int i = 0; i < 5000; ++i) {
+		for (int i = 0; i < 1000; ++i) {
 			auto p = rt::uniform_in_unit_circle(&random);
 			auto p1 = rt::Vec3(p.x, -1.0, p.y);
-			auto cp = p1 + rt::Vec3(random.uniform(-0.1, 0.1), 0.3, random.uniform(-0.1, 0.1));
-			auto p2 = cp + rt::Vec3(random.uniform(-0.1, 0.1), 0.3, random.uniform(-0.1, 0.1));
+			auto cp = p1 + rt::Vec3(random.uniform(-0.1, 0.1), 0.2, random.uniform(-0.1, 0.1));
+			auto p2 = cp + rt::Vec3(random.uniform(-0.1, 0.1), 0.2, random.uniform(-0.1, 0.1));
 
 			rt::BezierQuadratic3D bz(p1, cp, p2);
 
