@@ -47,13 +47,13 @@ namespace rt {
 		
 	};
 
-	class Fur {
+	class FurMaterial {
 	public:
 		Vec3 tangent;
-		double h = 0.0;
+		FurBSDFParams params;
 	};
 
-	using Material = mapbox::util::variant<LambertianMaterial, SpecularMaterial, Fur>;
+	using Material = mapbox::util::variant<LambertianMaterial, SpecularMaterial, FurMaterial>;
 
 	inline Vec3 uniform_on_triangle(rt::PeseudoRandom *random, const Vec3 &a, const Vec3 &b, const Vec3 &c) {
 		auto u = random->uniform();
@@ -464,8 +464,9 @@ namespace rt {
 					}
 				}
 				if (intersected) {
-					Fur fur;
-					fur.h = thisIntersection.h;
+					FurMaterial fur;
+					fur.params.h = thisIntersection.h;
+					fur.params.sigma_a = Vec3(1.0 - 179.0 / 255.0, 1.0 - 72.0 / 255.0, 1.0 - 29.0 / 255.0);
 					fur.tangent = glm::normalize(tangent);
 					*mat = fur;
 					*intersection = Intersection();
@@ -508,8 +509,9 @@ namespace rt {
 		bool intersect(const Ray &ray, Material *mat, Intersection *intersection, double *tmin) const override {
 			BVHBezierIntersection thisIntersection;
 			if (_bvh->intersect(ray, &thisIntersection, tmin)) {
-				Fur fur;
-				fur.h = thisIntersection.h;
+				FurMaterial fur;
+				fur.params.h = thisIntersection.h;
+				fur.params.sigma_a = _bvh->bezier(thisIntersection.bezierIndex).sigma_a;
 				fur.tangent = thisIntersection.tangent;
 				*mat = fur;
 				*intersection = Intersection();

@@ -70,8 +70,8 @@ namespace rt {
 					Vec3 wi = glm::reflect(ray.d, intersection.normal);
 					ray = Ray(ray.o + ray.d * tmin + wi * 0.000001, wi);
 				}
-				else if (mat.is<Fur>()) {
-					auto material = mat.get<Fur>();
+				else if (mat.is<FurMaterial>()) {
+					auto material = mat.get<FurMaterial>();
 
 					Vec3 wo = -ray.d;
 					Vec3 wi = uniform_on_unit_sphere(random);
@@ -85,7 +85,7 @@ namespace rt {
 					Vec3 bsdf_wi = to_bsdf * wi;
 
 					double pdf_omega = 1.0 / (4.0 * glm::pi<double>());
-					Vec3 bsdf_value = fur_bsdf(bsdf_wi, bsdf_wo, material.h);
+					Vec3 bsdf_value = fur_bsdf(bsdf_wi, bsdf_wo, material.params);
 					T *= (bsdf_value / pdf_omega) * AbsCosThetaForFur(bsdf_wi);
 					ray = Ray(ray.o + ray.d * tmin + wi * 0.000001, wi);
 				}

@@ -156,18 +156,33 @@ namespace rt {
 		return glm::transpose(from_bsdf);
 	}
 
-	/*
-	woがカメラ方向
-	wiがライト方向
-	*/
-	inline glm::dvec3 fur_bsdf(glm::dvec3 wi, glm::dvec3 wo, double h) {
-		// パラメータはひとまずハードコーディング
+	struct FurBSDFParams {
 		double eta = 1.55;
 		double beta_n = 0.9;
 		double beta_m = 0.9;
 		double alpha = 0.000;
-		// Vec3 sigma_a(0.0);
-		Vec3 sigma_a(1.0 - 179.0 / 255.0, 1.0 - 72.0 / 255.0, 1.0 - 29.0 / 255.0);
+		Vec3 sigma_a;
+		double h = 0.0;
+	};
+	/*
+	woがカメラ方向
+	wiがライト方向
+	*/
+	inline glm::dvec3 fur_bsdf(glm::dvec3 wi, glm::dvec3 wo, const FurBSDFParams &params) {
+		// パラメータはひとまずハードコーディング
+		//double eta = 1.55;
+		//double beta_n = 0.9;
+		//double beta_m = 0.9;
+		//double alpha = 0.000;
+		//// Vec3 sigma_a(0.0);
+		//Vec3 sigma_a(1.0 - 179.0 / 255.0, 1.0 - 72.0 / 255.0, 1.0 - 29.0 / 255.0);
+
+		double h = params.h;
+		double eta = params.eta;
+		double beta_n = params.beta_n;
+		double beta_m = params.beta_m;
+		double alpha = params.alpha;
+		Vec3 sigma_a = params.sigma_a;
 
 		double sinThetaO = wo.x;
 		double cosThetaO = SafeSqrt(1.0 - Sqr(sinThetaO));

@@ -4,10 +4,10 @@
 
 inline std::shared_ptr<rt::Scene> scene_conelbox() {
 	rt::CameraSetting cameraSetting;
-	cameraSetting._imageHeight = 256;
-	cameraSetting._imageWidth = 256;
-	//cameraSetting._imageHeight = 512 * 3;
-	//cameraSetting._imageWidth = 512 * 3;
+	//cameraSetting._imageHeight = 256;
+	//cameraSetting._imageWidth = 256;
+	cameraSetting._imageHeight = 512 * 2;
+	cameraSetting._imageWidth = 512 * 2;
 	cameraSetting._eye.z = 3.4;
 	//cameraSetting._eye.x = 1.0;
 	//cameraSetting._eye.y = 0.1;

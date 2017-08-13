@@ -3,12 +3,16 @@
 #include "ofMain.h"
 #include "ofxImGui.h"
 
+#include <plog/Log.h>
+#include <plog/Appenders/ColorConsoleAppender.h>
+
 #include "scene.hpp"
 #include "conelbox.hpp"
 #include "path_tracing.hpp"
 #include "stopwatch.hpp"
+#include "stats.hpp"
 
-#define NO_WINDOW 0
+#define NO_WINDOW 1
 
 class ofApp : public ofBaseApp{
 public:
@@ -37,5 +41,7 @@ public:
 	std::shared_ptr<rt::PathTracer> _pt;
 	std::shared_ptr<rt::Stopwatch> _sw;
 
-	std::shared_ptr<rt::Stopwatch> _finSw;
+	std::shared_ptr<rt::Stopwatch> _wholeSW;
+
+	rt::IncrementalStatatics _stepStats;
 };

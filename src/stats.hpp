@@ -30,6 +30,9 @@ namespace rt {
 	// https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Online_algorithm
 	class IncrementalStatatics {
 	public:
+		bool hasSample() const {
+			return 0 < _n;
+		}
 		void addSample(double x) {
 			_n++;
 			double delta = x - _mean;

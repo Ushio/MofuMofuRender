@@ -25,7 +25,11 @@ inline ofPixels toOf(const rt::Image &image) {
 
 //--------------------------------------------------------------
 void ofApp::setup() {
-	_finSw = std::shared_ptr<rt::Stopwatch>(new rt::Stopwatch());
+	_wholeSW = std::shared_ptr<rt::Stopwatch>(new rt::Stopwatch());
+
+	static plog::ColorConsoleAppender<plog::TxtFormatter> consoleAppender;
+	static plog::RollingFileAppender<plog::TxtFormatter> fileAppender(ofToDataPath("../../log.txt").c_str());
+	plog::init(plog::debug, &consoleAppender).addAppender(&fileAppender);
 
 #if NO_WINDOW == 0
 	_imgui.setup();
@@ -67,7 +71,7 @@ void ofApp::setup() {
 	{
 		std::vector<rt::BezierEntity> beziers;
 		rt::Xor random;
-		for (int i = 0; i < 1000; ++i) {
+		for (int i = 0; i < 5000; ++i) {
 			auto p = rt::uniform_in_unit_circle(&random);
 			auto p1 = rt::Vec3(p.x, -1.0, p.y);
 			auto cp = p1 + rt::Vec3(random.uniform(-0.1, 0.1), 0.2, random.uniform(-0.1, 0.1));
@@ -77,8 +81,8 @@ void ofApp::setup() {
 
 			rt::BezierEntity e;
 			e.bezier = bz;
-			e.sigma_a = rt::Vec3();
-			e.radius = 0.005;
+			e.sigma_a = rt::Vec3(random.uniform(0.0, 0.8), random.uniform(0.0, 0.8), random.uniform(0.0, 0.8));
+			e.radius = random.uniform(0.003, 0.008);
 			beziers.push_back(e);
 		}
 		std::shared_ptr<rt::BezierBVHSceneElement> element(new rt::BezierBVHSceneElement(beziers));
@@ -87,14 +91,16 @@ void ofApp::setup() {
 
 	_pt = std::shared_ptr<rt::PathTracer>(new rt::PathTracer(_scene));
 
-	printf("render begin...\n");
+	LOG_DEBUG << "render begin...";
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
 	rt::Stopwatch sw;
 	_pt->step();
-	printf("step: %.2f\n", sw.elapsed());
+	_stepStats.addSample(sw.elapsed());
+
+	LOG_DEBUG << "step: " << sw.elapsed();
 	
 #if NO_WINDOW == 0
 	//if (ofGetFrameNum() % 30 == 0) {
@@ -113,10 +119,10 @@ void ofApp::update(){
 		sprintf(name, "../../output_images/%03d.png", index++);
 		ofSaveImage(image, name);
 
-		printf("saved %03d.png, %.1fs\n", index - 1, _finSw->elapsed());
+		printf("saved %03d.png, %.1fs\n", index - 1, _wholeSW->elapsed());
 	}
 
-	if (_finSw->elapsed() > 60.0 * 4.0 + 33.0) {
+	if (_wholeSW->elapsed() + _stepStats.avarage() > 60.0 * 4.0 + 33.0) {
 		std::exit(0);
 	}
 #endif
