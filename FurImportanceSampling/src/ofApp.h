@@ -7,6 +7,7 @@
 #include "conelbox.hpp"
 #include "stopwatch.hpp"
 #include "bezier.hpp"
+#include "misc.hpp"
 
 class ofApp : public ofBaseApp {
 public:
@@ -33,5 +34,10 @@ public:
 	std::shared_ptr<rt::Scene> _scene;
 
 	float _thetaO = 0.0f;
-	float _v = 0.1f;
+	float _betaM = 0.1f;
+
+	int _p = 0;
+	float _betaN = 0.1f;
+	float _phiO = 0.0f;
+	float _h = 0.0f;
 };

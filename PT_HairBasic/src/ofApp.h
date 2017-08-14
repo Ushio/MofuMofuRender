@@ -12,7 +12,7 @@
 #include "stopwatch.hpp"
 #include "stats.hpp"
 
-#define NO_WINDOW 1
+#define NO_WINDOW 0
 
 class ofApp : public ofBaseApp{
 public:

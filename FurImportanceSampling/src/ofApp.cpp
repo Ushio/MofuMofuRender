@@ -1,20 +1,14 @@
 #include "ofApp.h"
 
-
 inline ofVec3f toOf(rt::Vec3 v) {
 	return ofVec3f(v.x, v.y, v.z);
 }
 const int kSize = 512;
 
-//
-//inline double sampleCosTheta(double OCosTheta, double v, rt::PeseudoRandom *random) {
-//	
-//
-//}
-
 
 //--------------------------------------------------------------
 void ofApp::setup() {
+
 	_imgui.setup();
 
 	_camera.setNearClip(0.1f);
@@ -98,18 +92,18 @@ void ofApp::draw(){
 	ofSetLineWidth(1);
 	ofPopMatrix();
 
+	double kCylinderRadius = 0.05;
 	ofPushMatrix();
 	ofRotateZ(90);
 	ofSetColor(255);
 	ofNoFill();
-	ofDrawCylinder(0.05f, 3.0f);
+	ofDrawCylinder(kCylinderRadius, 3.0f);
 	ofFill();
 	ofPopMatrix();
 
-	// v=0.02, 固定_theta_o: −1 radian, −1.3 radians,	and −1.4 radians の時の図と合っている。
 	using namespace rt;
 
-
+#if 0
 	// theta
 	ofSetColor(ofColor::orange);
 	ofSetLineWidth(3);
@@ -120,6 +114,8 @@ void ofApp::draw(){
 	double sinThetaO = wo.x;
 	double cosThetaO = SafeSqrt(1.0 - Sqr(sinThetaO));
 
+	double v = rt::betam_to_v(_betaM)[_p];
+
 	ofPolyline polyline;
 	int N = 1000;
 	for (int i = 0; i < N; ++i) {
@@ -128,50 +124,21 @@ void ofApp::draw(){
 
 		double sinThetaI = wi.x;
 		double cosThetaI = SafeSqrt(1.0 - Sqr(sinThetaI));
-		double y = Mp(sinThetaI, cosThetaI, sinThetaO, cosThetaO, _v);
+		double y = Mp(sinThetaI, cosThetaI, sinThetaO, cosThetaO, v);
 		polyline.addVertex(wi * y);
 	}
 	ofSetColor(255);
 	polyline.draw();
+#endif
 
-	// 確かにエネルギー保存、確立密度関数が満たすべき性質を満たしている
-	//{
-	//	ofMesh mesh;
-	//	mesh.setMode(OF_PRIMITIVE_POINTS);
-
-	//	static Xor random;
-	//	int NSample = 100000;
-	//	double sum = 0.0;
-	//	for (int i = 0; i < NSample; ++i) {
-	//		double p = 1.0 / glm::pi<double>();
-	//		double theta_i = random.uniform(-glm::pi<double>() * 0.5, glm::pi<double>() * 0.5);
-	//		double cosThetaI = glm::cos(theta_i);
-	//		double sinThetaI = glm::sin(theta_i);
-
-	//		double mp = Mp(sinThetaI, cosThetaI, sinThetaO, cosThetaO, _v);
-	//		sum += mp * cosThetaI / p;
-
-	//		ofVec3f wi = ofVec3f(0, 0, 1.0f).rotated(glm::degrees(theta_i), ofVec3f(0, 1, 0));
-
-	//		mesh.addVertex(wi * mp);
-	//	}
-
-	//	double E = sum / NSample;
-	//	printf("%.2f\n", E);
-
-	//	ofSetColor(255);
-	//	mesh.draw();
-	//}
-
+#if 0
+	// サンプリングが確立密度関数に従っているか
 	{
-		// ofMesh mesh;
-		// mesh.setMode(OF_PRIMITIVE_POINTS);
+		std::array<int, 50> histgram = {};
 
-		std::array<int, 100> histgram = {};
-
-		int NSample = 50000;
+		int NSample = 1000000;
 		static Xor random;
-		double v = _v;
+		double v = rt::betam_to_v(_betaM)[_p];
 		for (int i = 0; i < NSample; ++i) {
 			double eps1 = random.uniform();
 			double eps2 = random.uniform();
@@ -180,19 +147,17 @@ void ofApp::draw(){
 			double theta_tap = glm::pi<double>() * 0.5 - theta_cone;
 			double theta_i = glm::asin(u * glm::cos(theta_tap) + glm::sqrt(1.0 - u * u) * glm::cos(glm::two_pi<double>() * eps2) * glm::sin(theta_tap));
 
-			// ofVec3f wi = ofVec3f(0, 0, 1.0f).rotated(glm::degrees(theta_i), ofVec3f(0, 1, 0));
-			// mesh.addVertex(wi);
-
-			int index = ofMap(theta_i, -glm::pi<double>() * 0.5, glm::pi<double>() * 0.5, 0, histgram.size());
+			static rt::Remap toIndex(-glm::pi<double>() * 0.5, glm::pi<double>() * 0.5, 0, histgram.size());
+			int index = toIndex(theta_i);
+			index = glm::clamp(index, 0, (int)histgram.size());
 			histgram[index]++;
 		}
-		// ofSetColor(255);
-		// mesh.draw();
 
 		ofPolyline poly;
 		double deltaTheta = glm::pi<double>() / histgram.size();
 		for (int i = 0; i < histgram.size(); ++i) {
-			double theta_i = ofMap(i + 0.5, 0, histgram.size(), -glm::pi<double>() * 0.5, glm::pi<double>() * 0.5);
+			static rt::Remap toTheta(0, histgram.size(), -glm::pi<double>() * 0.5, glm::pi<double>() * 0.5);
+			double theta_i = toTheta(i + 0.5);
 			double P = (double)histgram[i] / (double)NSample;
 			double similarMp = P / (deltaTheta * glm::cos(theta_i));
 
@@ -203,8 +168,80 @@ void ofApp::draw(){
 		ofSetColor(ofColor::orange);
 		poly.draw();
 	}
+#endif
 
+#if 1
+	// phi
+	double phiO = glm::radians(_phiO);
+	Vec3 wo(0.0, glm::cos(phiO), glm::sin(phiO));
 
+	Vec3 h_dir = glm::rotateX(wo, glm::radians(-90.0));
+	double h = _h;
+
+	ofSetColor(ofColor::orange);
+	ofSetLineWidth(3);
+	ofDrawLine(toOf(h_dir * h * kCylinderRadius), toOf(wo + h_dir * h * kCylinderRadius));
+	ofSetLineWidth(1);
+
+	{
+		double sinThetaO = glm::sin(0.0); // 0
+		double cosThetaO = glm::cos(0.0); // 1
+
+		ofPolyline poly;
+
+		double eta = 1.55;
+		double s = betan_to_s(_betaN);
+		int N = 1000;
+		for (int i = 0; i < N; ++i) {
+			static rt::Remap toPhiI(0, N, -glm::pi<double>(), glm::pi<double>());
+			double phiI = toPhiI(i);
+			double phi = phiI - phiO;
+
+			double gammaO = SafeASin(h);
+			double etap = glm::sqrt(eta * eta - Sqr(sinThetaO)) / cosThetaO;
+			double sinGammaT = h / etap;
+			double cosGammaT = SafeSqrt(1 - Sqr(sinGammaT));
+			double gammaT = SafeASin(sinGammaT);
+			double np = Np(phi, _p, s, gammaO, gammaT);
+
+			Vec3 wo(0.0, glm::cos(phiI), glm::sin(phiI));
+			poly.addVertex(toOf(wo * np));
+		}
+
+		ofSetColor(255);
+		poly.draw();
+	}
+#endif
+
+#if 1
+	// Npの積分が1になるか
+	{
+		double sinThetaO = glm::sin(0.0); // 0
+		double cosThetaO = glm::cos(0.0); // 1
+
+		int NSample = 1000000;
+		static Xor random;
+
+		double eta = 1.55;
+		double s = betan_to_s(_betaN);
+
+		double integral = rt::integrate_composite_simpson([&](double phiI) {
+			double phi = phiI - phiO;
+			double gammaO = SafeASin(h);
+			double etap = glm::sqrt(eta * eta - Sqr(sinThetaO)) / cosThetaO;
+			double sinGammaT = h / etap;
+			double cosGammaT = SafeSqrt(1 - Sqr(sinGammaT));
+			double gammaT = SafeASin(sinGammaT);
+			double np = Np(phi, _p, s, gammaO, gammaT);
+			return np;
+		}, -glm::pi<double>(), glm::pi<double>(), 1000);
+
+		printf("E = %.2f\n", integral);
+	}
+#endif
+	{
+
+	}
 	_camera.end();
 
 	ofDisableDepthTest();
@@ -222,8 +259,12 @@ void ofApp::draw(){
 	ImGui::Text("fps: %.2f", ofGetFrameRate());
 
 	ImGui::SliderFloat("_thetaO", &_thetaO, -90, 90);
-	ImGui::InputFloat("_v", &_v);
-
+	ImGui::SliderFloat("_betaM", &_betaM, 0, 1);
+	ImGui::SliderInt("_p", &_p, 0, 3);
+	ImGui::SliderFloat("_phiO", &_phiO, -180, 180);
+	ImGui::SliderFloat("_h", &_h, -1, 1);
+	ImGui::SliderFloat("_betaN", &_betaN, 0, 1);
+	
 	auto wp = ImGui::GetWindowPos();
 	auto ws = ImGui::GetWindowSize();
 	ofRectangle win(wp.x, wp.y, ws.x, ws.y);

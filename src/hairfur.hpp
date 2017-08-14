@@ -132,7 +132,7 @@ namespace rt {
 		return TrimmedLogistic(dphi, s, -glm::pi<double>(), glm::pi<double>());
 	}
 
-	inline double beta_n_to_s(double beta_n) {
+	inline double betan_to_s(double beta_n) {
 		static const double SqrtPiOver8 = 0.626657069;		return SqrtPiOver8 * (0.265 * beta_n + 1.194 * Sqr(beta_n) + 5.372 * Pow<22>(beta_n));
 	}
 	inline double AbsCosThetaForFur(const Vec3 &w) {
@@ -192,7 +192,7 @@ namespace rt {
 		double cosThetaI = SafeSqrt(1.0 - Sqr(sinThetaI));
 		double phiI = std::atan2(wi.z, wi.y);
 
-		double s = beta_n_to_s(beta_n);
+		double s = betan_to_s(beta_n);
 		
 		double sinThetaT = sinThetaO / eta;
 		double cosThetaT = SafeSqrt(1.0 - Sqr(sinThetaT));
