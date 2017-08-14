@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <math.h>
 #include <array>
@@ -14,13 +14,19 @@ namespace rt {
 		return n2 * n2 * Pow<n & 1>(v);
 	}
 	template <> double Pow<1>(double v) { return v; }
-	template <> double Pow<0>(double v) { return 1.0; }	inline double Sqr(double x) {		return x * x;	}
+	template <> double Pow<0>(double v) { return 1.0; }
+
+	inline double Sqr(double x) {
+		return x * x;
+	}
+
 	inline double SafeASin(double x) {
 		if ((x >= -1.0001 && x <= 1.0001) == false) {
 			printf("SafeASin warning x: %.10f\n", x);
 		}
 		return std::asin(glm::clamp(x, -1.0, 1.0));
-	}	inline double SafeSqrt(double x) {
+	}
+	inline double SafeSqrt(double x) {
 		if (x < -1e-4) {
 			printf("SafeSqrt warning x: %.10f\n", x);
 		}
@@ -62,7 +68,8 @@ namespace rt {
 		double mp = (v <= 0.1) ?
 			(glm::exp(LogI0(a) - b - 1.0 / v + 0.6931 + glm::log(1.0 / (2.0 * v)))) :
 			(glm::exp(-b) * I0(a)) / (glm::sinh(1.0 / v) * 2.0 * v);
-		return mp;	}
+		return mp;
+	}
 
 	inline double FrDielectric(double cosThetaI, double etaI, double etaT) {
 		cosThetaI = glm::clamp(cosThetaI, -1.0, 1.0);
@@ -97,27 +104,32 @@ namespace rt {
 			ap[p] = ap[p - 1] * T * f;
 		}
 
-		ap[pMax] = ap[pMax - 1] * f * T / (Vec3(1.0) - T * f);
+		ap[pMax] = ap[pMax - 1] * f * T / (Vec3(1.0) - T * f);
+
 		return ap;
 	}
 
 	inline std::array<double, pMax + 1> betam_to_v(double bm) {
 		std::array<double, pMax + 1> vs;
-		vs[0] = Sqr(0.726 * bm + 0.812 * Sqr(bm) + 3.7 * Pow<20>(bm));		vs[1] = 0.25 * vs[0];
+		vs[0] = Sqr(0.726 * bm + 0.812 * Sqr(bm) + 3.7 * Pow<20>(bm));
+		vs[1] = 0.25 * vs[0];
 		vs[2] = 4.0 * vs[0];
 		for (int p = 3; p <= pMax; ++p)
-			vs[p] = vs[2];
+			vs[p] = vs[2];
+
 		return vs;
 	}
 
 	inline double Phi(int p, double gammaO, double gammaT) {
 		return 2.0 * p * gammaT - 2.0 * gammaO + p * glm::pi<double>();
-	}
+	}
+
 	inline double Logistic(double x, double s) {
 		x = std::abs(x);
 		double exp_minus_x_over_s = std::exp(-x / s);
 		return exp_minus_x_over_s / (s * Sqr(1.0 + exp_minus_x_over_s));
-	}	inline double LogisticCDF(double x, double s) {
+	}
+	inline double LogisticCDF(double x, double s) {
 		return 1.0 / (1.0 + std::exp(-x / s));
 	}
 
@@ -128,12 +140,14 @@ namespace rt {
 		double dphi = phi - Phi(p, gammaO, gammaT);
 
 		while (dphi > glm::pi<double>()) dphi -= 2.0 * glm::pi<double>();
-		while (dphi < -glm::pi<double>()) dphi += 2.0 * glm::pi<double>();
+		while (dphi < -glm::pi<double>()) dphi += 2.0 * glm::pi<double>();
+
 		return TrimmedLogistic(dphi, s, -glm::pi<double>(), glm::pi<double>());
 	}
 
 	inline double betan_to_s(double beta_n) {
-		static const double SqrtPiOver8 = 0.626657069;		return SqrtPiOver8 * (0.265 * beta_n + 1.194 * Sqr(beta_n) + 5.372 * Pow<22>(beta_n));
+		static const double SqrtPiOver8 = 0.626657069;
+		return SqrtPiOver8 * (0.265 * beta_n + 1.194 * Sqr(beta_n) + 5.372 * Pow<22>(beta_n));
 	}
 	inline double AbsCosThetaForFur(const Vec3 &w) {
 		return glm::sqrt(w.z * w.z + w.y * w.y);
@@ -200,7 +214,8 @@ namespace rt {
 		double etap = glm::sqrt(eta * eta - Sqr(sinThetaO)) / cosThetaO;
 		double sinGammaT = h / etap;
 		double cosGammaT = SafeSqrt(1 - Sqr(sinGammaT));
-		double gammaT = SafeASin(sinGammaT);
+		double gammaT = SafeASin(sinGammaT);
+
 		double l = 2.0 * cosGammaT / cosThetaT;
 
 		Vec3 T = glm::exp(-sigma_a * l);
@@ -244,7 +259,8 @@ namespace rt {
 			fsum += Mp(sinThetaIp, cosThetaIp, sinThetaO, cosThetaO, v[p]) * ap[p] * Np(phi, p, s, gammaO, gammaT);
 		}
 
-		fsum += Mp(cosThetaI, cosThetaO, sinThetaI, sinThetaO, v[pMax]) * ap[pMax] / (2.0 * glm::pi<double>());		if (AbsCosThetaForFur(wi) > 0) {
+		fsum += Mp(cosThetaI, cosThetaO, sinThetaI, sinThetaO, v[pMax]) * ap[pMax] / (2.0 * glm::pi<double>());
+		if (AbsCosThetaForFur(wi) > 0) {
 			fsum /= AbsCosThetaForFur(wi);
 		}
 		return fsum;

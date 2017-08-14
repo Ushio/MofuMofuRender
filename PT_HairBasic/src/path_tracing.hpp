@@ -78,10 +78,10 @@ namespace rt {
 
 					auto to_bsdf = to_fur_bsdf_basis_transform(material.tangent);
 
-					// ƒAƒC•ûŒü
+					// ã‚¢ã‚¤æ–¹å‘
 					Vec3 bsdf_wo = to_bsdf * wo;
 
-					// ƒ‰ƒCƒg•ûŒü
+					// ãƒ©ã‚¤ãƒˆæ–¹å‘
 					Vec3 bsdf_wi = to_bsdf * wi;
 
 					double pdf_omega = 1.0 / (4.0 * glm::pi<double>());
