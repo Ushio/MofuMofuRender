@@ -19,7 +19,7 @@ int main(int argc, char* const argv[])
 	// テストを指定する場合
 	char* const custom_argv[] = {
 		"",
-		"[Fur Np Integral]"
+		"[Np Sampling]"
 	};
 	Catch::Session().run(sizeof(custom_argv) / sizeof(custom_argv[0]), custom_argv);
 #else
@@ -90,6 +90,9 @@ TEST_CASE("Fur Mp Integration", "[Fur Mp Integration]") {
 	}
 }
 
+/*
+このテストはビジュアライズしたほうが遥かにいい
+*/
 TEST_CASE("Fur Mp Importance sampling", "[Fur Mp Importance sampling]") {
 	// サンプリングが確立密度関数に従っているか
 	rt::Xor random;
@@ -104,14 +107,10 @@ TEST_CASE("Fur Mp Importance sampling", "[Fur Mp Importance sampling]") {
 		for (int i = 0; i < NSample; ++i) {
 			double eps1 = random.uniform();
 			double eps2 = random.uniform();
-			double u = v * glm::log(glm::exp(1.0 / v) - 2.0 * eps1 * glm::sinh(1.0 / v));
-			double theta_cone = -glm::asin(sinThetaO);
-			double theta_tap = glm::pi<double>() * 0.5 - theta_cone;
-			double theta_i = glm::asin(u * glm::cos(theta_tap) + glm::sqrt(1.0 - u * u) * glm::cos(glm::two_pi<double>() * eps2) * glm::sin(theta_tap));
-
+			double theta_i = rt::sampleMp(eps1, eps2, v, sinThetaO);
 			static rt::Remap toIndex(-glm::pi<double>() * 0.5, glm::pi<double>() * 0.5, 0, histgram.size());
 			int index = toIndex(theta_i);
-			index = glm::clamp(index, 0, (int)histgram.size());
+			index = glm::clamp(index, 0, (int)histgram.size() - 1);
 			histgram[index]++;
 		}
 
@@ -179,5 +178,94 @@ TEST_CASE("Fur Np Integral", "[Fur Np Integral]") {
 		}, -glm::pi<double>(), glm::pi<double>(), 5000);
 
 		REQUIRE(glm::abs(integral - 1.0) < 0.001);
+	}
+}
+
+TEST_CASE("Np Logistic Sample", "[Np Logistic Sample]") {
+	rt::Xor random;
+	for (int j = 0; j < 100; ++j) {
+		double s = random.uniform(0.1, 2.0);
+
+		double a = -glm::pi<double>();
+		double b = glm::pi<double>();
+
+		std::array<int, 100> histgram = {};
+		int NSample = 1000000;
+		for (int i = 0; i < NSample; ++i) {
+			static rt::Remap toIndex(a, b, 0, histgram.size());
+
+			double sample = rt::sampleTrimmedLogistic(random.uniform(), s, a, b);
+			int index = toIndex(sample);
+			index = glm::clamp(index, 0, (int)histgram.size() - 1);
+			histgram[index]++;
+		}
+
+		for (int i = 0; i < histgram.size(); ++i) {
+			double p = (double)histgram[i] / NSample;
+			double similarTrimmedLogistic = p / ((b - a) / histgram.size());
+			static rt::Remap toX(0, histgram.size(), a, b);
+			double x = toX(i + 0.5);
+			double trimmedLogistic = rt::TrimmedLogistic(x, s, a, b);
+			REQUIRE(glm::abs(trimmedLogistic - similarTrimmedLogistic) < 0.05);
+		}
+	}
+}
+
+
+/*
+ このテストはビジュアライズしたほうが遥かにいい
+*/
+TEST_CASE("Np Sampling", "[Np Sampling]") {
+	using namespace rt;
+
+	rt::Xor random;
+	for (int j = 0; j < 100; ++j) {
+		double s = betan_to_s(random.uniform(0.2, 1.0));
+		double a = -glm::pi<double>();
+		double b = glm::pi<double>();
+
+		double thetaO = random.uniform(-glm::pi<double>() * 0.5, glm::pi<double>() * 0.5);
+		double sinThetaO = glm::sin(thetaO);
+		double cosThetaO = glm::cos(thetaO);
+		double eta = 1.55;
+		double h = random.uniform(-1.0, 1.0);
+		int p = random.generate() % 4;
+		
+		double phiO = random.uniform(-glm::pi<double>(), glm::pi<double>());
+
+		std::array<int, 100> histgram = {};
+		int NSample = 1000000;
+		for (int i = 0; i < NSample; ++i) {
+			static rt::Remap toIndex(a, b, 0, histgram.size());
+
+			double gammaO = SafeASin(h);
+			double etap = glm::sqrt(eta * eta - Sqr(sinThetaO)) / cosThetaO;
+			double sinGammaT = h / etap;
+			double cosGammaT = SafeSqrt(1 - Sqr(sinGammaT));
+			double gammaT = SafeASin(sinGammaT);
+
+			double phiI = rt::sampleNp(random.uniform(), phiO, p, s, gammaO, gammaT);
+
+			int index = toIndex(phiI);
+			index = glm::clamp(index, 0, (int)histgram.size() - 1);
+			histgram[index]++;
+		}
+
+		for (int i = 0; i < histgram.size(); ++i) {
+			double P = (double)histgram[i] / NSample;
+			double similarNp = P / ((b - a) / histgram.size());
+			static rt::Remap toPhiI(0, histgram.size(), a, b);
+			double phiI = toPhiI(i + 0.5);
+			double phi = phiI - phiO;
+
+			double gammaO = SafeASin(h);
+			double etap = glm::sqrt(eta * eta - Sqr(sinThetaO)) / cosThetaO;
+			double sinGammaT = h / etap;
+			double cosGammaT = SafeSqrt(1 - Sqr(sinGammaT));
+			double gammaT = SafeASin(sinGammaT);
+
+			double np = Np(phi, p, s, gammaO, gammaT);
+			REQUIRE(glm::abs(np - similarNp) < 0.1);
+		}
 	}
 }

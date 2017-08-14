@@ -120,6 +120,9 @@ namespace rt {
 		return vs;
 	}
 
+	/*
+	初期角度(phiO)を0と基準にしたときの、ピーク角度を返す。
+	*/
 	inline double Phi(int p, double gammaO, double gammaT) {
 		return 2.0 * p * gammaT - 2.0 * gammaO + p * glm::pi<double>();
 	}
@@ -137,6 +140,9 @@ namespace rt {
 		return Logistic(x, s) / (LogisticCDF(b, s) - LogisticCDF(a, s));
 	}
 	inline double Np(double phi, int p, double s, double gammaO, double gammaT) {
+		/*
+		 ここで phi は phiOからphiIへの相対角度
+		*/
 		double dphi = phi - Phi(p, gammaO, gammaT);
 
 		while (dphi > glm::pi<double>()) dphi -= 2.0 * glm::pi<double>();
@@ -183,14 +189,6 @@ namespace rt {
 	wiがライト方向
 	*/
 	inline glm::dvec3 fur_bsdf(glm::dvec3 wi, glm::dvec3 wo, const FurBSDFParams &params) {
-		// パラメータはひとまずハードコーディング
-		//double eta = 1.55;
-		//double beta_n = 0.9;
-		//double beta_m = 0.9;
-		//double alpha = 0.000;
-		//// Vec3 sigma_a(0.0);
-		//Vec3 sigma_a(1.0 - 179.0 / 255.0, 1.0 - 72.0 / 255.0, 1.0 - 29.0 / 255.0);
-
 		double h = params.h;
 		double eta = params.eta;
 		double beta_n = params.beta_n;
@@ -265,4 +263,44 @@ namespace rt {
 		}
 		return fsum;
 	}
+
+	/*
+	Mpの重点サンプリング
+	eps1, eps2 = 0~1 乱数
+	θを返す
+	*/
+	inline double sampleMp(double eps1, double eps2, double v, double sinThetaO) {
+		double u = v * glm::log(glm::exp(1.0 / v) - 2.0 * eps1 * glm::sinh(1.0 / v));
+		double theta_cone = -glm::asin(sinThetaO);
+		double theta_tap = glm::pi<double>() * 0.5 - theta_cone;
+		return glm::asin(u * glm::cos(theta_tap) + glm::sqrt(1.0 - u * u) * glm::cos(glm::two_pi<double>() * eps2) * glm::sin(theta_tap));
+	}
+
+	/*
+	TrimmedLogisticの重点サンプリング
+	eps1 = 0~1 乱数
+	x を返す
+	*/
+	inline double sampleTrimmedLogistic(double eps1, double s, double a, double b) {
+		double T = LogisticCDF(b, s) - LogisticCDF(a, s);
+		return -s * glm::log(
+			1.0 / (eps1 * T + 1.0 / (1.0 + glm::exp(-a / s))) - 1.0
+		);
+	}
+
+	/*
+	  Npの重点サンプリング
+	  phiI を返す
+	*/
+	inline double sampleNp(double eps1, double phiO, int p, double s, double gammaO, double gammaT) {
+		double dphi = Phi(p, gammaO, gammaT) + sampleTrimmedLogistic(eps1, s, -glm::pi<double>(), glm::pi<double>());
+		double phiI = phiO + dphi;
+		
+		while (phiI > glm::pi<double>()) phiI -= 2.0 * glm::pi<double>();
+		while (phiI < -glm::pi<double>()) phiI += 2.0 * glm::pi<double>();
+
+		return phiI;
+	}
+
+	//Vec3 sampleHair(std::array<double, 4> eps_x4, )
 }

@@ -104,7 +104,7 @@ void ofApp::draw(){
 	using namespace rt;
 
 #if 0
-	// theta
+	// Mp
 	ofSetColor(ofColor::orange);
 	ofSetLineWidth(3);
 	ofDrawLine(ofVec3f(), ofVec3f(0, 0, 1).rotated(_thetaO, ofVec3f(0, 1, 0)));
@@ -149,7 +149,7 @@ void ofApp::draw(){
 
 			static rt::Remap toIndex(-glm::pi<double>() * 0.5, glm::pi<double>() * 0.5, 0, histgram.size());
 			int index = toIndex(theta_i);
-			index = glm::clamp(index, 0, (int)histgram.size());
+			index = glm::clamp(index, 0, (int)histgram.size() - 1);
 			histgram[index]++;
 		}
 
@@ -171,7 +171,7 @@ void ofApp::draw(){
 #endif
 
 #if 1
-	// phi
+	// Np
 	double phiO = glm::radians(_phiO);
 	Vec3 wo(0.0, glm::cos(phiO), glm::sin(phiO));
 
@@ -213,35 +213,101 @@ void ofApp::draw(){
 	}
 #endif
 
-#if 1
-	// Npの積分が1になるか
+#if 0
+	// Logistic
 	{
+		double s = betan_to_s(_betaN);
+		double a = -glm::pi<double>();
+		double b = glm::pi<double>();
+
+		ofPolyline poly;
+
+		int N = 500;
+		for (int i = 0; i < N; ++i) {
+			static rt::Remap toX(0, N, a, b);
+			double x = toX(i);
+			double value = rt::TrimmedLogistic(x, s, a, b);
+			poly.addVertex(ofVec3f(x, value, 0.0));
+		}
+		ofSetColor(255);
+		poly.draw();
+	}
+	{
+		static rt::Xor random;
+
+		double s = betan_to_s(_betaN);
+		double a = -glm::pi<double>();
+		double b = glm::pi<double>();
+
+		ofPolyline poly;
+
+		std::array<int, 100> histgram = {};
+		int NSample = 1000000;
+		for (int i = 0; i < NSample; ++i) {
+			static rt::Remap toIndex(a, b, 0, histgram.size());
+
+			double sample = rt::sampleTrimmedLogistic(random.uniform(), s, a, b);
+			int index = toIndex(sample);
+			index = glm::clamp(index, 0, (int)histgram.size() - 1);
+			histgram[index]++;
+		}
+
+		for (int i = 0; i < histgram.size(); ++i) {
+			double p = (double)histgram[i] / NSample;
+			double similarTrimmedLogistic = p / ((b - a) / histgram.size());
+			static rt::Remap toX(0, histgram.size(), a, b);
+			double x = toX(i + 0.5);
+			poly.addVertex(ofVec3f(x, similarTrimmedLogistic, 0.0));
+			rt::TrimmedLogistic(x, s, a, b);
+		}
+		ofSetColor(ofColor::orange);
+		poly.draw();
+	}
+#endif
+	{
+		static rt::Xor random;
+
+		double s = betan_to_s(_betaN);
+		double a = -glm::pi<double>();
+		double b = glm::pi<double>();
+
 		double sinThetaO = glm::sin(0.0); // 0
 		double cosThetaO = glm::cos(0.0); // 1
-
-		int NSample = 1000000;
-		static Xor random;
-
 		double eta = 1.55;
-		double s = betan_to_s(_betaN);
 
-		double integral = rt::integrate_composite_simpson([&](double phiI) {
-			double phi = phiI - phiO;
+		ofPolyline poly;
+
+		std::array<int, 100> histgram = {};
+		int NSample = 1000000;
+		for (int i = 0; i < NSample; ++i) {
+			static rt::Remap toIndex(a, b, 0, histgram.size());
+
 			double gammaO = SafeASin(h);
 			double etap = glm::sqrt(eta * eta - Sqr(sinThetaO)) / cosThetaO;
 			double sinGammaT = h / etap;
 			double cosGammaT = SafeSqrt(1 - Sqr(sinGammaT));
 			double gammaT = SafeASin(sinGammaT);
-			double np = Np(phi, _p, s, gammaO, gammaT);
-			return np;
-		}, -glm::pi<double>(), glm::pi<double>(), 1000);
 
-		printf("E = %.2f\n", integral);
-	}
-#endif
-	{
+			double phiI = rt::sampleNp(random.uniform(), phiO, _p, s, gammaO, gammaT);
+			
+			int index = toIndex(phiI);
+			index = glm::clamp(index, 0, (int)histgram.size() - 1);
+			histgram[index]++;
+		}
 
+		for (int i = 0; i < histgram.size(); ++i) {
+			double p = (double)histgram[i] / NSample;
+			double similarNp = p / ((b - a) / histgram.size());
+			static rt::Remap toPhiI(0, histgram.size(), a, b);
+			double phiI = toPhiI(i + 0.5);
+			Vec3 wi(0.0, glm::cos(phiI), glm::sin(phiI));
+
+			poly.addVertex(toOf(wi * similarNp));
+		}
+		ofSetColor(ofColor::orange);
+		poly.draw();
 	}
+
 	_camera.end();
 
 	ofDisableDepthTest();
