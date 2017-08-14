@@ -19,7 +19,7 @@ int main(int argc, char* const argv[])
 	// テストを指定する場合
 	char* const custom_argv[] = {
 		"",
-		"[Fur TrimmedLogistic]"
+		"[Fur Np Integral]"
 	};
 	Catch::Session().run(sizeof(custom_argv) / sizeof(custom_argv[0]), custom_argv);
 #else
@@ -147,6 +147,37 @@ TEST_CASE("Fur TrimmedLogistic", "[Fur TrimmedLogistic]") {
 			double va = rt::TrimmedLogistic(x, s, a, b);
 			return va;
 		}, a, b, 1000);
+		REQUIRE(glm::abs(integral - 1.0) < 0.001);
+	}
+}
+
+TEST_CASE("Fur Np Integral", "[Fur Np Integral]") {
+	using namespace rt;
+
+	// 積分が 1 になるべき
+	rt::Xor random;
+	for (int j = 0; j < 1000; ++j) {
+		double thetaO = random.uniform(-glm::pi<double>() * 0.5, glm::pi<double>() * 0.5);
+		double sinThetaO = glm::sin(thetaO);
+		double cosThetaO = glm::cos(thetaO);
+		double betaN = random.uniform(0.01, 1.0);
+		double s = betan_to_s(betaN);
+		double eta = 1.55;
+		double phiO = random.uniform(-glm::pi<double>(), glm::pi<double>());
+		double h = random.uniform(-1.0, 1.0);
+		int p = random.generate() % 10;
+
+		double integral = integrate_composite_simpson([&](double phiI) {
+			double phi = phiI - phiO;
+			double gammaO = SafeASin(h);
+			double etap = glm::sqrt(eta * eta - Sqr(sinThetaO)) / cosThetaO;
+			double sinGammaT = h / etap;
+			double cosGammaT = SafeSqrt(1 - Sqr(sinGammaT));
+			double gammaT = SafeASin(sinGammaT);
+			double np = Np(phi, p, s, gammaO, gammaT);
+			return np;
+		}, -glm::pi<double>(), glm::pi<double>(), 5000);
+
 		REQUIRE(glm::abs(integral - 1.0) < 0.001);
 	}
 }
