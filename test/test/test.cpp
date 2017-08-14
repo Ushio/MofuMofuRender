@@ -16,14 +16,14 @@
 int main(int argc, char* const argv[])
 {
 #if 1
-	// ƒeƒXƒg‚ğw’è‚·‚éê‡
+	// ãƒ†ã‚¹ãƒˆã‚’æŒ‡å®šã™ã‚‹å ´åˆ
 	char* const custom_argv[] = {
 		"",
-		"[Fur Mp Integration]"
+		"[Fur TrimmedLogistic]"
 	};
 	Catch::Session().run(sizeof(custom_argv) / sizeof(custom_argv[0]), custom_argv);
 #else
-	// ‘S•”‚â‚éê‡
+	// å…¨éƒ¨ã‚„ã‚‹å ´åˆ
 	Catch::Session().run(sizeof(custom_argv) / sizeof(custom_argv[0]), custom_argv);
 #endif
 
@@ -71,7 +71,7 @@ TEST_CASE("Bezier Collision", "[Bezier Collision]") {
 }
 
 TEST_CASE("Fur Mp Integration", "[Fur Mp Integration]") {
-	// Mp‚ª’P‘Ì‚ÅƒGƒlƒ‹ƒM[•Û‘¶AŠm—§–§“xŠÖ”‚ª–‚½‚·‚×‚««¿‚ğ–‚½‚µ‚Ä‚¢‚é
+	// MpãŒå˜ä½“ã§ã‚¨ãƒãƒ«ã‚®ãƒ¼ä¿å­˜ã€ç¢ºç«‹å¯†åº¦é–¢æ•°ãŒæº€ãŸã™ã¹ãæ€§è³ªã‚’æº€ãŸã—ã¦ã„ã‚‹
 	// \int _{ -\frac { \pi  }{ 2 }  }^{ \frac { \pi  }{ 2 }  }{ M_{ p }\left( \theta _{ o },\theta _{ i } \right) \cos { \theta _{ i } } d\theta _{ i } } =1
 	rt::Xor random;
 	for (int j = 0; j < 1000; ++j) {
@@ -91,7 +91,7 @@ TEST_CASE("Fur Mp Integration", "[Fur Mp Integration]") {
 }
 
 TEST_CASE("Fur Mp Importance sampling", "[Fur Mp Importance sampling]") {
-	// ƒTƒ“ƒvƒŠƒ“ƒO‚ªŠm—§–§“xŠÖ”‚É]‚Á‚Ä‚¢‚é‚©
+	// ã‚µãƒ³ãƒ—ãƒªãƒ³ã‚°ãŒç¢ºç«‹å¯†åº¦é–¢æ•°ã«å¾“ã£ã¦ã„ã‚‹ã‹
 	rt::Xor random;
 	for (int j = 0; j < 100; ++j) {
 		double theta_o = random.uniform(-glm::pi<double>() * 0.5, glm::pi<double>() * 0.5);
@@ -133,9 +133,20 @@ TEST_CASE("Fur Mp Importance sampling", "[Fur Mp Importance sampling]") {
 }
 
 TEST_CASE("Fur TrimmedLogistic", "[Fur TrimmedLogistic]") {
-	// Ï•ª‚ª 1 ‚É‚È‚é‚©H
+	// ç©åˆ†ãŒ 1 ã«ãªã‚‹ã¹ã
 	rt::Xor random;
-	for (int j = 0; j < 100; ++j) {
+	for (int j = 0; j < 1000; ++j) {
+		double s = random.uniform(0.01, 2.0);
 
+		double a = random.uniform(-5.0, 0.0);
+		double b = random.uniform(0.0, 5.0);
+		if (a > b) {
+			std::swap(a, b);
+		}
+		double integral = rt::integrate_composite_simpson([&](double x) {
+			double va = rt::TrimmedLogistic(x, s, a, b);
+			return va;
+		}, a, b, 1000);
+		REQUIRE(glm::abs(integral - 1.0) < 0.001);
 	}
 }
