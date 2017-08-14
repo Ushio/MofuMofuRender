@@ -302,5 +302,150 @@ namespace rt {
 		return phiI;
 	}
 
-	//Vec3 sampleHair(std::array<double, 4> eps_x4, )
+	inline double luminance(const Vec3 &color) {
+		// srgb to y
+		return color.r * 0.212639 + color.g * 0.715168 + color.b * 0.072192;
+	}
+
+	inline std::array<double, pMax + 1> toApTap(const std::array<Vec3, pMax + 1> &ap) {
+		std::array<double, pMax + 1> r;
+		for (int i = 0; i < r.size(); ++i) {
+			r[i] = luminance(ap[i]);
+		}
+		return r;
+	}
+	inline std::array<double, pMax + 1> toApPDF(const std::array<double, pMax + 1> &ap_tap) {
+		double sum = 0.0;
+		for (int i = 0; i < ap_tap.size(); ++i) {
+			sum += ap_tap[i];
+		}
+		std::array<double, pMax + 1> r = ap_tap;
+		for (int i = 0; i < r.size(); ++i) {
+			r[i] /= sum;
+		}
+		return r;
+	}
+	inline std::array<double, pMax + 1> toApCDF(const std::array<double, pMax + 1> &apPDF) {
+		std::array<double, pMax + 1> r;
+		double sum = 0.0;
+		for (int i = 0; i < apPDF.size(); ++i) {
+			sum += apPDF[i];
+			r[i] = sum;
+		}
+		return r;
+	}
+	inline int sampleAp(double eps1, const std::array<double, pMax + 1> &apCDF) {
+		for (int i = 0; i < apCDF.size(); ++i) {
+			if (eps1 < apCDF[i]) {
+				return i;
+			}
+		}
+		return apCDF.size() - 1;
+	}
+
+	inline Vec3 sampleHair(std::array<double, 4> eps_x4, const Vec3 &wo, const FurBSDFParams &params, double *p_omega) {
+		double h = params.h;
+		double eta = params.eta;
+		double beta_n = params.beta_n;
+		double beta_m = params.beta_m;
+		double alpha = params.alpha;
+		Vec3 sigma_a = params.sigma_a;
+
+		double sinThetaO = wo.x;
+		double cosThetaO = SafeSqrt(1.0 - Sqr(sinThetaO));
+		double phiO = std::atan2(wo.z, wo.y);
+
+		double s = betan_to_s(beta_n);
+
+		double sinThetaT = sinThetaO / eta;
+		double cosThetaT = SafeSqrt(1.0 - Sqr(sinThetaT));
+
+		double etap = glm::sqrt(eta * eta - Sqr(sinThetaO)) / cosThetaO;
+		double sinGammaT = h / etap;
+		double cosGammaT = SafeSqrt(1 - Sqr(sinGammaT));
+		double gammaT = SafeASin(sinGammaT);
+
+		double l = 2.0 * cosGammaT / cosThetaT;
+
+		Vec3 T = glm::exp(-sigma_a * l);
+
+		std::array<double, 3> sin2kAlpha;
+		std::array<double, 3> cos2kAlpha;
+		sin2kAlpha[0] = std::sin(alpha);
+		cos2kAlpha[0] = SafeSqrt(1 - Sqr(sin2kAlpha[0]));
+		for (int i = 1; i < 3; ++i) {
+			sin2kAlpha[i] = 2 * cos2kAlpha[i - 1] * sin2kAlpha[i - 1];
+			cos2kAlpha[i] = Sqr(cos2kAlpha[i - 1]) - Sqr(sin2kAlpha[i - 1]);
+		}
+
+		double gammaO = SafeASin(h);
+
+		std::array<Vec3, pMax + 1> ap = Ap(cosThetaO, eta, h, T);
+		std::array<double, pMax + 1> ap_tap = toApTap(ap);
+		std::array<double, pMax + 1> apPDF = toApPDF(ap_tap);
+		std::array<double, pMax + 1> apCDF = toApCDF(apPDF);
+
+		std::array<double, pMax + 1> v = betam_to_v(beta_m);
+
+		// サンプリング
+		int sample_p = sampleAp(eps_x4[0], apCDF);
+		double thetaI = sampleMp(eps_x4[1], eps_x4[2], v[sample_p], sinThetaO);
+		double phiI;
+		if (sample_p < pMax) {
+			phiI = sampleNp(eps_x4[3], phiO, sample_p, s, gammaO, gammaT);
+		} else {
+			phiI = glm::mix(-glm::pi<double>(), glm::pi<double>(), eps_x4[3]);
+		}
+
+		//double thetaI_Alpha;
+		//switch (sample_p) {
+		//case 0:
+		//	thetaI_Alpha = thetaI + 2.0 * alpha;
+		//	break;
+		//case 1:
+		//	thetaI_Alpha = thetaI - alpha;
+		//	break;
+		//case 2:
+		//	thetaI_Alpha = thetaI - 4.0 * alpha;
+		//	break;
+		//default:
+		//	thetaI_Alpha = thetaI;
+		//	break;
+		//}
+		double sinThetaI = glm::sin(thetaI);
+		double cosThetaI = glm::cos(thetaI);
+
+		double phi = phiI - phiO;
+
+		double p_omega_sum = 0.0;
+		for (int p = 0; p < 3; ++p) {
+			double sinThetaIp, cosThetaIp;
+			if (p == 0) {
+				sinThetaIp = sinThetaI * cos2kAlpha[1] + cosThetaI * sin2kAlpha[1];
+				cosThetaIp = cosThetaI * cos2kAlpha[1] - sinThetaI * sin2kAlpha[1];
+			}
+			else if (p == 1) {
+				sinThetaIp = sinThetaI * cos2kAlpha[0] - cosThetaI * sin2kAlpha[0];
+				cosThetaIp = cosThetaI * cos2kAlpha[0] + sinThetaI * sin2kAlpha[0];
+			}
+			else if (p == 2) {
+				sinThetaIp = sinThetaI * cos2kAlpha[2] - cosThetaI * sin2kAlpha[2];
+				cosThetaIp = cosThetaI * cos2kAlpha[2] + sinThetaI * sin2kAlpha[2];
+			}
+			else {
+				sinThetaIp = sinThetaI;
+				cosThetaIp = cosThetaI;
+			}
+			cosThetaIp = std::abs(cosThetaIp);
+
+			p_omega_sum += Mp(sinThetaIp, cosThetaIp, sinThetaO, cosThetaO, v[p]) * apPDF[p] * Np(phi, p, s, gammaO, gammaT);
+		}
+
+		p_omega_sum += Mp(cosThetaI, cosThetaO, sinThetaI, sinThetaO, v[pMax]) * apPDF[pMax] / (2.0 * glm::pi<double>());
+	
+		*p_omega = p_omega_sum;
+
+		Vec3 wi = Vec3(sinThetaI, cosThetaI * std::cos(phiI), cosThetaI * std::sin(phiI));
+		return wi;
+	}
 }

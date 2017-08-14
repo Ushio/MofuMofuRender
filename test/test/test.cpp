@@ -19,11 +19,14 @@ int main(int argc, char* const argv[])
 	// テストを指定する場合
 	char* const custom_argv[] = {
 		"",
-		"[Np Sampling]"
+		"[Fur energy conservation]"
 	};
 	Catch::Session().run(sizeof(custom_argv) / sizeof(custom_argv[0]), custom_argv);
 #else
 	// 全部やる場合
+	char* const custom_argv[] = {
+		"",
+	};
 	Catch::Session().run(sizeof(custom_argv) / sizeof(custom_argv[0]), custom_argv);
 #endif
 
@@ -267,5 +270,102 @@ TEST_CASE("Np Sampling", "[Np Sampling]") {
 			double np = Np(phi, p, s, gammaO, gammaT);
 			REQUIRE(glm::abs(np - similarNp) < 0.1);
 		}
+	}
+}
+
+TEST_CASE("Ap Sampling", "[Ap Sampling]") {
+	using namespace rt;
+
+	rt::Xor random;
+
+	for (int j = 0; j < 1000; ++j) {
+		std::array<double, pMax + 1> ap_tap = {
+			random.uniform(0.0, 1.0),
+			random.uniform(0.0, 1.0),
+			random.uniform(0.0, 1.0),
+			random.uniform(0.0, 1.0)
+		};
+		std::array<double, pMax + 1> apPDF = toApPDF(ap_tap);
+		std::array<double, pMax + 1> apCDF = toApCDF(apPDF);
+		
+		std::array<int, pMax + 1> histgram = {};
+		int NSample = 100000;
+		for (int i = 0; i < NSample; ++i) {
+			int p = sampleAp(random.uniform(), apCDF);
+			histgram[p]++;
+		}
+
+		for (int i = 0; i < histgram.size(); ++i) {
+			double P = (double)histgram[i] / NSample;
+			double PDF = apPDF[i];
+			REQUIRE(glm::abs(P - PDF) < 0.01);
+		}
+	}
+}
+
+
+TEST_CASE("Fur energy conservation", "[Fur energy conservation]") {
+	using namespace rt;
+
+	rt::Xor random;
+	for (int j = 0; j < 50; ++j) {
+		Vec3 wo = uniform_on_unit_sphere(&random);
+
+		Vec3 sum;
+		int count = 100000;
+		for (int i = 0; i < count; ++i) {
+			FurBSDFParams params;
+			params.h = random.uniform(-1.0, 1.0);
+			params.sigma_a = Vec3(0.0);
+			params.beta_n = random.uniform(0.6, 1.0);
+			params.beta_m = random.uniform(0.6, 1.0);
+			params.eta = 1.55;
+			params.alpha = 0.0;
+
+			double p_omega = 1.0 / (4.0 * glm::pi<double>());
+			Vec3 sigma_a;
+			Vec3 wi = uniform_on_unit_sphere(&random);
+
+			sum += rt::fur_bsdf(wi, wo, params) * rt::AbsCosThetaForFur(wi) / p_omega;
+		}
+
+		double avg = sum.y / count;
+		REQUIRE(glm::abs(avg - 1.0) < 0.05);
+	}
+}
+
+TEST_CASE("Fur Importance Sampling", "[Fur Importance Sampling]") {
+	using namespace rt;
+
+	rt::Xor random;
+	for (int j = 0; j < 50; ++j) {
+		Vec3 wo = uniform_on_unit_sphere(&random);
+
+		Vec3 sum;
+		int count = 100000;
+		for (int i = 0; i < count; ++i) {
+			// TODO beta_m が小さいとき
+			FurBSDFParams params;
+			params.h = random.uniform(-1.0, 1.0);
+			params.sigma_a = Vec3(0.0);
+			params.beta_n = random.uniform(0.2, 1.0);
+			params.beta_m = random.uniform(0.2, 1.0);
+			params.eta = 1.55;
+			params.alpha = 0.0;
+
+			double p_omega;
+			Vec3 sigma_a;
+			Vec3 wi = sampleHair(
+				{ random.uniform(), random.uniform(), random.uniform(), random.uniform()},
+				wo,
+				params,
+				&p_omega
+			);
+
+			sum += rt::fur_bsdf(wi, wo, params) * rt::AbsCosThetaForFur(wi) / p_omega;
+		}
+
+		double avg = sum.y / count;
+		REQUIRE(glm::abs(avg - 1.0) < 0.05);
 	}
 }

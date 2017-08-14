@@ -16,11 +16,10 @@ void ofApp::setup() {
 	_camera.setDistance(5.0f);
 
 	_image.allocate(kSize, kSize, OF_IMAGE_GRAYSCALE);
-
 }
 
 //--------------------------------------------------------------
-void ofApp::update(){
+void ofApp::update() {
 	//using namespace rt;
 	//int size = _image.getWidth();
 
