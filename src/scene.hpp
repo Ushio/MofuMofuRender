@@ -510,6 +510,8 @@ namespace rt {
 			BVHBezierIntersection thisIntersection;
 			if (_bvh->intersect(ray, &thisIntersection, tmin)) {
 				FurMaterial fur;
+				fur.params.beta_n = 0.9;
+				fur.params.beta_m = 0.9;
 				fur.params.h = thisIntersection.h;
 				fur.params.sigma_a = _bvh->bezier(thisIntersection.bezierIndex).sigma_a;
 				fur.tangent = thisIntersection.tangent;

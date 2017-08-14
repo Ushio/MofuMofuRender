@@ -74,7 +74,15 @@ namespace rt {
 					auto material = mat.get<FurMaterial>();
 
 					Vec3 wo = -ray.d;
-					Vec3 wi = uniform_on_unit_sphere(random);
+
+					// Vec3 wi = uniform_on_unit_sphere(random);
+					// double p_omega = 1.0 / (4.0 * glm::pi<double>());
+
+					double p_omega;
+					Vec3 wi = sampleHair(
+					    { random->uniform(), random->uniform(), random->uniform(), random->uniform() },
+						wo, material.params, &p_omega
+					);
 
 					auto to_bsdf = to_fur_bsdf_basis_transform(material.tangent);
 
@@ -84,9 +92,8 @@ namespace rt {
 					// ライト方向
 					Vec3 bsdf_wi = to_bsdf * wi;
 
-					double pdf_omega = 1.0 / (4.0 * glm::pi<double>());
 					Vec3 bsdf_value = fur_bsdf(bsdf_wi, bsdf_wo, material.params);
-					T *= (bsdf_value / pdf_omega) * AbsCosThetaForFur(bsdf_wi);
+					T *= (bsdf_value / p_omega) * AbsCosThetaForFur(bsdf_wi);
 					ray = Ray(ray.o + ray.d * tmin + wi * 0.000001, wi);
 				}
 			}
