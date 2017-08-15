@@ -900,7 +900,23 @@ namespace rt {
 			}
 			return intersected;
 		}
-		// bool shadow(const Vec3 p,)
+		bool shadow(const Vec3 &p, const Vec3 &q) const {
+			double dist = glm::distance(p, q);
+			Ray ray;
+			ray.o = q;
+			ray.d = (q - p) / dist;
+			ray.o += ray.d * 0.0001;
+
+			double tmin = dist;
+			for (int i = 0; i < _sceneElements.size(); ++i) {
+				Material m;
+				Intersection intersection;
+				if (_sceneElements[i]->intersect(ray, &m, &intersection, &tmin)) {
+					return false;
+				}
+			}
+			return true;
+		}
 
 		// エリアに均等であり、areaは常にライト全体の面積を返す
 		void sampleEmissive(Vec3 *p, Vec3 *n, Vec3 *emissiveRadiance, double *area, PeseudoRandom *random) const {
