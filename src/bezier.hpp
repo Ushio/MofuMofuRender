@@ -202,8 +202,13 @@ namespace rt {
 		}
 		rt::AABB boundingBox() const {
 			rt::AABB aabb(_ps[0], _ps[2]);
-			aabb.expand((_ps[0] + _ps[1]) * 0.5);
-			aabb.expand((_ps[1] + _ps[2]) * 0.5);
+			aabb.expand(_ps[1]);
+			return aabb;
+		}
+		rt::AABB boundingBoxConvexhull() const {
+			rt::AABB aabb(_ps[0], _ps[2]);
+			 aabb.expand((_ps[0] + _ps[1]) * 0.5);
+			 aabb.expand((_ps[1] + _ps[2]) * 0.5);
 			return aabb;
 		}
 		std::tuple<BezierQuadratic3D, BezierQuadratic3D> split(double t) const {
@@ -242,8 +247,7 @@ namespace rt {
 			//ofSetColor(64);
 			//drawAABB(b);
 			return false;
-		}
-		else if (depth == 0) {
+		} else if (depth == 0) {
 			/// the maximum recursion depth is reached.
 			auto dir = c[2] - c[0];
 

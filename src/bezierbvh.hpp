@@ -206,7 +206,7 @@ namespace rt {
 		AABB aabb;
 		for (int i = 0; i < bezierIndices.size(); ++i) {
 			auto bezierEntity = beziers[bezierIndices[i]];
-			auto bbox = bezierEntity.bezier.boundingBox();
+			auto bbox = bezierEntity.bezier.boundingBoxConvexhull();
 			bbox.expand(bezierEntity.radius);
 			aabb.expand(bbox);
 		}
@@ -271,7 +271,7 @@ namespace rt {
 					sah_new_context.triangles_L.push_back(bezierIndex);
 
 					auto bezierEntity = beziers[bezierIndices[i]];
-					auto bbox = bezierEntity.bezier.boundingBox();
+					auto bbox = bezierEntity.bezier.boundingBoxConvexhull();
 					bbox.expand(bezierEntity.radius);
 					sah_new_context.aabb_L.expand(bbox);
 				}
@@ -279,7 +279,7 @@ namespace rt {
 					sah_new_context.triangles_R.push_back(bezierIndex);
 
 					auto bezierEntity = beziers[bezierIndices[i]];
-					auto bbox = bezierEntity.bezier.boundingBox();
+					auto bbox = bezierEntity.bezier.boundingBoxConvexhull();
 					bbox.expand(bezierEntity.radius);
 					sah_new_context.aabb_R.expand(bbox);
 				}
@@ -472,7 +472,7 @@ namespace rt {
 
 			for (int i = 0; i < bezierIndices.size(); ++i) {
 				auto bezierEntity = beziers[bezierIndices[i]];
-				auto bbox = bezierEntity.bezier.boundingBox();
+				auto bbox = bezierEntity.bezier.boundingBoxConvexhull();
 				bbox.expand(bezierEntity.radius);
 				_aabb.expand(bbox);
 			}

@@ -520,36 +520,6 @@ namespace rt {
 				return true;
 			}
 			return false;
-
-			//double radius = 0.02;
-			//auto projection = rt::ray_projection(ray.o, ray.d);
-
-			//bool intersected = false;
-			//for (int i = 0; i < _beziers.size(); ++i) {
-			//	auto bezier = _beziers[i].transform(projection);
-
-			//	rt::CurveIntersection thisIntersection;
-			//	bool intersected = rt::intersect_bezier(7, radius, radius * radius, bezier, bezier, 0.0, 1.0, tmin, &thisIntersection);
-			//	Vec3 tangent;
-
-			//	// origin rejection
-			//	if (intersected) {
-			//		tangent = bezier.tangent(thisIntersection.bezier_t);
-			//		auto p = bezier.evaluate(thisIntersection.bezier_t);
-			//		if (rt::distanceSqPointRay(rt::Vec3(0.0), p, tangent) < radius * radius) {
-			//			intersected = false;
-			//		}
-			//	}
-			//	if (intersected) {
-			//		Fur fur;
-			//		fur.h = thisIntersection.h;
-			//		fur.tangent = glm::normalize(tangent);
-			//		*mat = fur;
-			//		*intersection = Intersection();
-			//		intersected = true;
-			//	}
-			//}
-			//return intersected;
 		}
 
 		double emissiveArea() const override {
@@ -930,6 +900,7 @@ namespace rt {
 			}
 			return intersected;
 		}
+		// bool shadow(const Vec3 p,)
 
 		// エリアに均等であり、areaは常にライト全体の面積を返す
 		void sampleEmissive(Vec3 *p, Vec3 *n, Vec3 *emissiveRadiance, double *area, PeseudoRandom *random) const {
