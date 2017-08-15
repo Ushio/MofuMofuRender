@@ -53,7 +53,9 @@ namespace rt {
 
 		Vec3 Lo;
 		Vec3 T(1.0);
-		for (int i = 0; i < 10; ++i) {
+		const int kDepth = 10;
+		for (int i = 0; i < kDepth; ++i) {
+			bool isLast = i + 1 == kDepth;
 			Material mat;
 			Intersection intersection;
 			double tmin = std::numeric_limits<double>::max();
@@ -87,7 +89,8 @@ namespace rt {
 						// double this_mis_weight = p_A_explicit / (p_A_implicit + p_A_explicit);
 						
 						// パワーヒューリスティック
-						double this_mis_weight = p_A_explicit * p_A_explicit / (p_A_implicit * p_A_implicit + p_A_explicit * p_A_explicit);
+						// 次のimplicitはサンプルしないため、その場合のMIS Weight は 1.0
+						double this_mis_weight = isLast ? 1.0 : p_A_explicit * p_A_explicit / (p_A_implicit * p_A_implicit + p_A_explicit * p_A_explicit);
 
 						if (glm::epsilon<double>() < G) {
 							if (scene->shadow(px, p) == false) {
@@ -154,7 +157,8 @@ namespace rt {
 						// バランスヒューリスティック
 						// double this_mis_weight = p_A_explicit / (p_A_implicit + p_A_explicit);
 						// パワーヒューリスティック
-						double this_mis_weight = p_A_explicit * p_A_explicit / (p_A_implicit * p_A_implicit + p_A_explicit * p_A_explicit);
+						// 次のimplicitはサンプルしないため、その場合のMIS Weight は 1.0
+						double this_mis_weight = isLast ? 1.0 : p_A_explicit * p_A_explicit / (p_A_implicit * p_A_implicit + p_A_explicit * p_A_explicit);
 
 						if (glm::epsilon<double>() < G) {
 							if (scene->shadow(px, p) == false) {
