@@ -54,7 +54,7 @@ namespace rt {
 
 	// 分岐なし実装
 	// https://tavianator.com/fast-branchless-raybounding-box-intersections/
-	inline std::experimental::optional<float> intersect_aabb(const Ray &ray, const rt::Vec3 &inv_d, const AABB& aabb) {
+	inline std::experimental::optional<double> intersect_aabb(const Ray &ray, const rt::Vec3 &inv_d, const AABB& aabb) {
 		double tx1 = (aabb.min_position.x - ray.o.x) * inv_d.x;
 		double tx2 = (aabb.max_position.x - ray.o.x) * inv_d.x;
 		double tmin = glm::min(tx1, tx2);
@@ -82,7 +82,7 @@ namespace rt {
 		if (intersect) {
 			return tmin < 0.0 ? tmax : tmin;
 		}
-		return std::experimental::optional<float>();
+		return std::experimental::optional<double>();
 	}
 
 	struct AABB2d {

@@ -47,7 +47,7 @@ namespace rt {
 
 	inline Vec3 radiance(std::shared_ptr<rt::Scene> scene, Ray ray, PeseudoRandom *random) {
 		// 光源はLambertianMaterialのみであるので、パラメータはこれだけでOK
-		fixed_size_function<double(Vec3, Vec3)> evaluate_mis_weight_implicit = [](Vec3 light_p, Vec3 light_n) {
+		fixed_size_function<double(Vec3, Vec3), 128> evaluate_mis_weight_implicit = [](Vec3 light_p, Vec3 light_n) {
 			return 1.0;
 		};
 
@@ -78,8 +78,8 @@ namespace rt {
 
 						auto brdf = material.R * Vec3(glm::one_over_pi<double>());
 
-						double cosTheta0 = glm::abs(glm::dot(intersection.normal, wi));
-						double cosTheta1 = glm::abs(glm::dot(n, -wi));
+						double cosTheta0 = glm::max(glm::dot(intersection.normal, wi), 0.0);
+						double cosTheta1 = glm::max(glm::dot(n, -wi), 0.0);
 						double G = cosTheta0 * cosTheta1 / glm::distance2(px, p);
 
 						double p_omega_implicit = cosine_weighted_hemisphere_pdf_brdf(to_bxdf_basis_transform(intersection.normal) * wi);
@@ -93,13 +93,15 @@ namespace rt {
 						double this_mis_weight = isLast ? 1.0 : p_A_explicit * p_A_explicit / (p_A_implicit * p_A_implicit + p_A_explicit * p_A_explicit);
 
 						if (glm::epsilon<double>() < G) {
-							if (scene->shadow(px, p) == false) {
+							if (scene->visible(px, p)) {
 								Lo += this_mis_weight * T * brdf * G * emissive / p_A_explicit;
+								// Lo += T * brdf * G * emissive / p_A_explicit;
 							}
 						}
 					}
 
 					Lo += evaluate_mis_weight_implicit(px, intersection.normal) * material.Le * T;
+					// Lo += material.Le * T;
 
 					Vec3 sample = sample_cosine_weighted_hemisphere_brdf(random);
 					double p_omega = cosine_weighted_hemisphere_pdf_brdf(sample);
@@ -149,7 +151,7 @@ namespace rt {
 						Vec3 bsdf_value = fur_bsdf(bsdf_wi, bsdf_wo, material.params);
 
 						double cosTheta0 = AbsCosThetaForFur(bsdf_wi);
-						double cosTheta1 = glm::abs(glm::dot(n, -wi));
+						double cosTheta1 = glm::max(glm::dot(n, -wi), 0.0);
 						double G = cosTheta0 * cosTheta1 / glm::distance2(px, p);
 
 						double p_omega_implicit = pdfFur(bsdf_wi, bsdf_wo, material.params);
@@ -161,7 +163,7 @@ namespace rt {
 						double this_mis_weight = isLast ? 1.0 : p_A_explicit * p_A_explicit / (p_A_implicit * p_A_implicit + p_A_explicit * p_A_explicit);
 
 						if (glm::epsilon<double>() < G) {
-							if (scene->shadow(px, p) == false) {
+							if (scene->visible(px, p)) {
 								Lo += this_mis_weight * T * bsdf_value * G * emissive / p_A_explicit;
 							}
 						}

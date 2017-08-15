@@ -7,6 +7,7 @@
 #include "conelbox.hpp"
 #include "path_tracing.hpp"
 #include "stopwatch.hpp"
+#include "transform.hpp"
 
 class ofApp : public ofBaseApp{
 public:

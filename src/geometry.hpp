@@ -9,6 +9,7 @@ namespace rt {
 	typedef glm::dvec4 Vec4;
 	typedef glm::dmat3 Mat3;
 	typedef glm::dmat4 Mat4;
+	typedef glm::dquat Quat;
 
 	struct Ray {
 		Ray() {}

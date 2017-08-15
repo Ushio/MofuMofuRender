@@ -11,6 +11,7 @@
 #include "path_tracing.hpp"
 #include "stopwatch.hpp"
 #include "stats.hpp"
+#include "transform.hpp"
 
 #define NO_WINDOW 0
 

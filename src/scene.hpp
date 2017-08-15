@@ -348,9 +348,17 @@ namespace rt {
 				areas.push_back(triangle_area(v0, v1, v2));
 			}
 			_areaUniformSampler = std::unique_ptr<AreaUniformSampler>(new AreaUniformSampler(areas));
+
+			for (int i = 0; i < _vertices.size(); ++i) {
+				_aabb.expand(_vertices[i]);
+			}
 		}
 
 		bool intersect(const Ray &ray, Material *mat, Intersection *intersection, double *tmin) const override {
+			if (!intersect_aabb(ray, Vec3(1.0) / ray.d, _aabb)) {
+				return false;
+			}
+
 			bool intersected = false;
 			for (int i = 0; i < _indices.size(); i += 3) {
 				const Vec3 &v0 = _vertices[_indices[i + 0]];
@@ -424,6 +432,7 @@ namespace rt {
 			}
 		}
 
+		AABB _aabb;
 		std::vector<Vec3> _vertices;
 		std::vector<int> _indices;
 
@@ -900,14 +909,17 @@ namespace rt {
 			}
 			return intersected;
 		}
-		bool shadow(const Vec3 &p, const Vec3 &q) const {
+
+		bool visible(const Vec3 &p, const Vec3 &q) const {
+			double bias = 0.000001;
 			double dist = glm::distance(p, q);
 			Ray ray;
-			ray.o = q;
-			ray.d = (q - p) / dist;
-			ray.o += ray.d * 0.0001;
+			ray.o = p;
+			ray.d = glm::normalize(q - p);
+			ray.o += ray.d * bias;
 
-			double tmin = dist;
+			// もしdistより手前にtminがあるのなら、それは遮蔽されている
+			double tmin = (dist - bias) - 0.0001;
 			for (int i = 0; i < _sceneElements.size(); ++i) {
 				Material m;
 				Intersection intersection;
@@ -916,6 +928,19 @@ namespace rt {
 				}
 			}
 			return true;
+
+			//Material m;
+			//Intersection intersection;
+			//double tmin = std::numeric_limits<double>::max();
+			//this->intersect(ray, &m, &intersection, &tmin);
+			////if (glm::abs(tmin - dist) < 0.0001) {
+			////	return true;
+			////}
+			//auto x = ray.o + ray.d * tmin;
+			//if (glm::distance2(x, q) < 0.0001) {
+			//	return true;
+			//}
+			//return false;
 		}
 
 		// 面積に均等
