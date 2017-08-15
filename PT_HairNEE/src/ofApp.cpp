@@ -302,28 +302,28 @@ void ofApp::setup() {
 	//	_scene = _scene->addElement(element);
 	//}
 
-	//{
-	//	std::vector<rt::BezierEntity> beziers;
-	//	rt::Xor random;
-	//	for (int i = 0; i < 1000; ++i) {
-	//		auto p = rt::uniform_in_unit_circle(&random);
-	//		auto p1 = rt::Vec3(p.x, -1.0, p.y);
-	//		auto cp = p1 + rt::Vec3(random.uniform(-0.1, 0.1), 0.2, random.uniform(-0.1, 0.1));
-	//		auto p2 = cp + rt::Vec3(random.uniform(-0.1, 0.1), 0.2, random.uniform(-0.1, 0.1));
+	{
+		std::vector<rt::BezierEntity> beziers;
+		rt::Xor random;
+		for (int i = 0; i < 300; ++i) {
+			auto p = rt::uniform_in_unit_circle(&random);
+			auto p1 = rt::Vec3(p.x, -1.0, p.y);
+			auto cp = p1 + rt::Vec3(random.uniform(-0.1, 0.1), 0.2, random.uniform(-0.1, 0.1));
+			auto p2 = cp + rt::Vec3(random.uniform(-0.1, 0.1), 0.2, random.uniform(-0.1, 0.1));
 
-	//		rt::BezierQuadratic3D bz(p1, cp, p2);
+			rt::BezierQuadratic3D bz(p1, cp, p2);
 
-	//		rt::BezierEntity e;
-	//		e.bezier = bz;
-	//		e.sigma_a = rt::Vec3(random.uniform(0.0, 0.8), random.uniform(0.0, 0.8), random.uniform(0.0, 0.8));
-	//		e.radius = random.uniform(0.003, 0.008);
-	//		beziers.push_back(e);
-	//	}
-	//	std::shared_ptr<rt::BezierBVHSceneElement> element(new rt::BezierBVHSceneElement(beziers));
-	//	_scene = _scene->addElement(element);
-	//}
+			rt::BezierEntity e;
+			e.bezier = bz;
+			e.sigma_a = rt::Vec3(random.uniform(0.0, 0.8), random.uniform(0.0, 0.8), random.uniform(0.0, 0.8));
+			e.radius = random.uniform(0.003, 0.008);
+			beziers.push_back(e);
+		}
+		std::shared_ptr<rt::BezierBVHSceneElement> element(new rt::BezierBVHSceneElement(beziers));
+		_scene = _scene->addElement(element);
+	}
 
-	_scene = scene_fromUnity();
+	// _scene = scene_fromUnity();
 
 	_pt = std::shared_ptr<rt::PathTracer>(new rt::PathTracer(_scene));
 
@@ -384,9 +384,9 @@ void ofApp::draw(){
 	ofDrawAxis(50);
 	ofPopMatrix();
 
-	_scene->drawPreview([](const rt::Vec3 &p0, const rt::Vec3 &p1) {
-		ofDrawLine(toOf(p0), toOf(p1));
-	});
+	//_scene->drawPreview([](const rt::Vec3 &p0, const rt::Vec3 &p1) {
+	//	ofDrawLine(toOf(p0), toOf(p1));
+	//});
 
 	_camera.end();
 

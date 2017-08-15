@@ -61,11 +61,33 @@ namespace rt {
 			double tmin = std::numeric_limits<double>::max();
 
 			if (scene->intersect(ray, &mat, &intersection, &tmin)) {
+				// NEE のロシアンルーレット
+				// より短い経路に計算を集中させるべきだ
+				auto connection_russian_roulette = [](double x) {
+					// https://www.desmos.com/calculator/iacvjvy9ic
+					double a = 0.05;
+					double b = 0.3;
+					double c = 1.6;
+					return a + (-tanh(b * x - c) + 1.0) * 0.5 * (1.0 - a);
+				};
+				double russian_roulette_continue = connection_russian_roulette(i);
+				// |             continue                |      reject     |
+				// |           e.g. 80 %                 |  e.g. 20 %      | 
+				bool doNEE = true;
+				if (russian_roulette_continue < random->uniform()) {
+					doNEE = false;
+				}
+
+				/*
+				russian_roulette_continue = 1.0;
+				doNEE = true;
+				*/
+
 				if(mat.is<LambertianMaterial>()) {
 					auto material = mat.get<LambertianMaterial>();
 					Vec3 px = ray.o + ray.d * tmin;
-					// NEE
-					{
+
+					if(doNEE) {
 						Vec3 p;
 						Vec3 n;
 						Vec3 emissive;
@@ -94,7 +116,7 @@ namespace rt {
 
 						if (glm::epsilon<double>() < G) {
 							if (scene->visible(px, p)) {
-								Lo += this_mis_weight * T * brdf * G * emissive / p_A_explicit;
+								Lo += this_mis_weight * T * brdf * G * emissive / p_A_explicit / russian_roulette_continue;
 								// Lo += T * brdf * G * emissive / p_A_explicit;
 							}
 						}
@@ -129,8 +151,8 @@ namespace rt {
 					auto material = mat.get<FurMaterial>();
 					Vec3 wo = -ray.d;
 					Vec3 px = ray.o + ray.d * tmin;
-					// NEE
-					{
+
+					if (doNEE) {
 						Vec3 p;
 						Vec3 n;
 						Vec3 emissive;
