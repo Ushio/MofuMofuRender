@@ -82,7 +82,7 @@ void ofApp::setup() {
 			rt::BezierEntity e;
 			e.bezier = bz;
 			e.sigma_a = rt::Vec3(random.uniform(0.0, 0.8), random.uniform(0.0, 0.8), random.uniform(0.0, 0.8));
-			e.radius = 0.002;//  random.uniform(0.003, 0.008);
+			e.radius = random.uniform(0.003, 0.008);
 			beziers.push_back(e);
 		}
 		std::shared_ptr<rt::BezierBVHSceneElement> element(new rt::BezierBVHSceneElement(beziers));

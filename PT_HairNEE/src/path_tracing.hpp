@@ -2,6 +2,8 @@
 
 #include <tbb/tbb.h>
 #include "scene.hpp"
+#include <fixed_size_function.hpp>
+
 namespace rt {
 	class Image {
 	public:
@@ -44,6 +46,11 @@ namespace rt {
 	};
 
 	inline Vec3 radiance(std::shared_ptr<rt::Scene> scene, Ray ray, PeseudoRandom *random) {
+		// 光源はLambertianMaterialのみであるので、パラメータはこれだけでOK
+		fixed_size_function<double(Vec3, Vec3)> evaluate_mis_weight_implicit = [](Vec3 light_p, Vec3 light_n) {
+			return 1.0;
+		};
+
 		Vec3 Lo;
 		Vec3 T(1.0);
 		for (int i = 0; i < 10; ++i) {
@@ -60,8 +67,9 @@ namespace rt {
 						Vec3 p;
 						Vec3 n;
 						Vec3 emissive;
-						double area;
-						scene->sampleEmissive(&p, &n, &emissive, &area, random);
+						scene->sampleEmissive(&p, &n, &emissive, random);
+
+						double area = scene->emissiveArea();
 						double p_A_explicit = 1.0 / area;
 
 						Vec3 wi = glm::normalize(p - px);
@@ -72,36 +80,46 @@ namespace rt {
 						double cosTheta1 = glm::abs(glm::dot(n, -wi));
 						double G = cosTheta0 * cosTheta1 / glm::distance2(px, p);
 
-						// double p_omega_implicit = cosine_weighted_hemisphere_pdf_brdf(to_bxdf_basis_transform(intersection.normal) * wi);
-						// double p_A_implicit = p_omega_implicit * cosTheta1 / glm::distance2(px, p);
+						double p_omega_implicit = cosine_weighted_hemisphere_pdf_brdf(to_bxdf_basis_transform(intersection.normal) * wi);
+						double p_A_implicit = p_omega_implicit * cosTheta1 / glm::distance2(px, p);
+
+						// バランスヒューリスティック
 						// double this_mis_weight = p_A_explicit / (p_A_implicit + p_A_explicit);
-						// double this_mis_weight = p_A_explicit * p_A_explicit / (p_A_implicit * p_A_implicit + p_A_explicit * p_A_explicit);
-						// double v = V(px, p);
+						
+						// パワーヒューリスティック
+						double this_mis_weight = p_A_explicit * p_A_explicit / (p_A_implicit * p_A_implicit + p_A_explicit * p_A_explicit);
 
 						if (glm::epsilon<double>() < G) {
 							if (scene->shadow(px, p) == false) {
-								Lo += T * brdf * G * emissive / p_A_explicit;
+								Lo += this_mis_weight * T * brdf * G * emissive / p_A_explicit;
 							}
 						}
 					}
 
-					if (i == 0) {
-						Lo += material.Le * T;
-					}
+					Lo += evaluate_mis_weight_implicit(px, intersection.normal) * material.Le * T;
 
 					Vec3 sample = sample_cosine_weighted_hemisphere_brdf(random);
-					double pdf_omega = cosine_weighted_hemisphere_pdf_brdf(sample);
+					double p_omega = cosine_weighted_hemisphere_pdf_brdf(sample);
 					auto wi = from_bxdf(intersection.normal, sample);
 
 					auto brdf = material.R * Vec3(glm::one_over_pi<double>());
 					auto cos_term = abs_cos_theta_bxdf(sample);
 
-					T *= brdf * cos_term / pdf_omega;
+					T *= brdf * cos_term / p_omega;
 					ray = Ray(px + wi * 0.000001, wi);
-				} else if(mat.is<SpecularMaterial>()) {
-					Vec3 wi = glm::reflect(ray.d, intersection.normal);
-					ray = Ray(ray.o + ray.d * tmin + wi * 0.000001, wi);
-				}
+
+					evaluate_mis_weight_implicit = [=](Vec3 light_p, Vec3 light_n) {
+						double cosTheta1 = glm::abs(glm::dot(light_n, -wi));
+						double p_A_implicit = p_omega * cosTheta1 / glm::distance2(px, light_p);
+						double p_A_explicit = 1.0 / scene->emissiveArea();
+
+						// バランスヒューリスティック
+						// return p_A_implicit / (p_A_implicit + p_A_explicit);
+
+						// パワーヒューリスティック
+						return p_A_implicit * p_A_implicit / (p_A_implicit * p_A_implicit + p_A_explicit * p_A_explicit);
+					};
+				} 
 				else if (mat.is<FurMaterial>()) {
 					auto material = mat.get<FurMaterial>();
 					Vec3 wo = -ray.d;
@@ -111,8 +129,8 @@ namespace rt {
 						Vec3 p;
 						Vec3 n;
 						Vec3 emissive;
-						double area;
-						scene->sampleEmissive(&p, &n, &emissive, &area, random);
+						scene->sampleEmissive(&p, &n, &emissive, random);
+						double area = scene->emissiveArea();
 						double p_A_explicit = 1.0 / area;
 
 						Vec3 wi = glm::normalize(p - px);
@@ -131,24 +149,22 @@ namespace rt {
 						double cosTheta1 = glm::abs(glm::dot(n, -wi));
 						double G = cosTheta0 * cosTheta1 / glm::distance2(px, p);
 
-						// double p_omega_implicit = cosine_weighted_hemisphere_pdf_brdf(to_bxdf_basis_transform(intersection.normal) * wi);
-						// double p_A_implicit = p_omega_implicit * cosTheta1 / glm::distance2(px, p);
+						double p_omega_implicit = pdfFur(bsdf_wi, bsdf_wo, material.params);
+						double p_A_implicit = p_omega_implicit * cosTheta1 / glm::distance2(px, p);
+						// バランスヒューリスティック
 						// double this_mis_weight = p_A_explicit / (p_A_implicit + p_A_explicit);
-						// double this_mis_weight = p_A_explicit * p_A_explicit / (p_A_implicit * p_A_implicit + p_A_explicit * p_A_explicit);
-						// double v = V(px, p);
+						// パワーヒューリスティック
+						double this_mis_weight = p_A_explicit * p_A_explicit / (p_A_implicit * p_A_implicit + p_A_explicit * p_A_explicit);
 
 						if (glm::epsilon<double>() < G) {
 							if (scene->shadow(px, p) == false) {
-								Lo += T * bsdf_value * G * emissive / p_A_explicit;
+								Lo += this_mis_weight * T * bsdf_value * G * emissive / p_A_explicit;
 							}
 						}
 					}
 
-					// Vec3 wi = uniform_on_unit_sphere(random);
-					// double p_omega = 1.0 / (4.0 * glm::pi<double>());
-
 					double p_omega;
-					Vec3 wi = sampleHair(
+					Vec3 wi = sampleFur(
 					    { random->uniform(), random->uniform(), random->uniform(), random->uniform() },
 						wo, material.params, &p_omega
 					);
@@ -164,9 +180,29 @@ namespace rt {
 					Vec3 bsdf_value = fur_bsdf(bsdf_wi, bsdf_wo, material.params);
 					T *= (bsdf_value / p_omega) * AbsCosThetaForFur(bsdf_wi);
 					ray = Ray(px + wi * 0.000001, wi);
+
+					evaluate_mis_weight_implicit = [=](Vec3 light_p, Vec3 light_n) {
+						double cosTheta1 = glm::abs(glm::dot(light_n, -wi));
+						double p_A_implicit = p_omega * cosTheta1 / glm::distance2(px, light_p);
+						double p_A_explicit = 1.0 / scene->emissiveArea();
+
+						// バランスヒューリスティック
+						// return p_A_implicit / (p_A_implicit + p_A_explicit);
+
+						// パワーヒューリスティック
+						return p_A_implicit * p_A_implicit / (p_A_implicit * p_A_implicit + p_A_explicit * p_A_explicit);
+					};
+				} else if (mat.is<SpecularMaterial>()) {
+					Vec3 wi = glm::reflect(ray.d, intersection.normal);
+					ray = Ray(ray.o + ray.d * tmin + wi * 0.000001, wi);
+
+					evaluate_mis_weight_implicit = [](Vec3 light_p, Vec3 light_n) {
+						return 1.0;
+					};
 				}
 			}
 			else {
+				// ここでIBLをサンプルするか？
 				break;
 			}
 		}

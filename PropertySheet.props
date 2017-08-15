@@ -5,7 +5,7 @@
   <PropertyGroup />
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)../libs/variant\include;$(SolutionDir)../libs/tinyobjloader;$(SolutionDir)../libs/Optional;$(SolutionDir)../src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)../libs/variant\include;$(SolutionDir)../libs/tinyobjloader;$(SolutionDir)../libs/fixed_size_function;$(SolutionDir)../libs/Optional;$(SolutionDir)../src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup />

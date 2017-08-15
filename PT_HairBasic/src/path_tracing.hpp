@@ -79,7 +79,7 @@ namespace rt {
 					// double p_omega = 1.0 / (4.0 * glm::pi<double>());
 
 					double p_omega;
-					Vec3 wi = sampleHair(
+					Vec3 wi = sampleFur(
 					    { random->uniform(), random->uniform(), random->uniform(), random->uniform() },
 						wo, material.params, &p_omega
 					);

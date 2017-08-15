@@ -19,7 +19,7 @@ int main(int argc, char* const argv[])
 	// テストを指定する場合
 	char* const custom_argv[] = {
 		"",
-		"[Fur energy conservation]"
+		"[Fur PDF]"
 	};
 	Catch::Session().run(sizeof(custom_argv) / sizeof(custom_argv[0]), custom_argv);
 #else
@@ -355,7 +355,7 @@ TEST_CASE("Fur Importance Sampling", "[Fur Importance Sampling]") {
 
 			double p_omega;
 			Vec3 sigma_a;
-			Vec3 wi = sampleHair(
+			Vec3 wi = sampleFur(
 				{ random.uniform(), random.uniform(), random.uniform(), random.uniform()},
 				wo,
 				params,
@@ -367,5 +367,34 @@ TEST_CASE("Fur Importance Sampling", "[Fur Importance Sampling]") {
 
 		double avg = sum.y / count;
 		REQUIRE(glm::abs(avg - 1.0) < 0.05);
+	}
+}
+
+TEST_CASE("Fur PDF", "[Fur PDF]") {
+	using namespace rt;
+
+	rt::Xor random;
+	for (int j = 0; j < 10000; ++j) {
+		Vec3 wo = uniform_on_unit_sphere(&random);
+
+		FurBSDFParams params;
+		params.h = random.uniform(-1.0, 1.0);
+		params.sigma_a = Vec3(0.0);
+		params.beta_n = random.uniform(0.1, 1.0);
+		params.beta_m = random.uniform(0.1, 1.0);
+		params.eta = 1.55;
+		params.alpha = 0.0;
+
+		double p_omega;
+		Vec3 sigma_a;
+		Vec3 wi = sampleFur(
+		{ random.uniform(), random.uniform(), random.uniform(), random.uniform() },
+			wo,
+			params,
+			&p_omega
+		);
+
+		double p_omega_with_wi = pdfFur(wi, wo, params);
+		REQUIRE(glm::abs(p_omega_with_wi - p_omega) < 0.0001);
 	}
 }

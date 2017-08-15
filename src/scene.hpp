@@ -918,9 +918,8 @@ namespace rt {
 			return true;
 		}
 
-		// エリアに均等であり、areaは常にライト全体の面積を返す
-		void sampleEmissive(Vec3 *p, Vec3 *n, Vec3 *emissiveRadiance, double *area, PeseudoRandom *random) const {
-			*area = _areaUniformSampler->area();
+		// 面積に均等
+		void sampleEmissive(Vec3 *p, Vec3 *n, Vec3 *emissiveRadiance, PeseudoRandom *random) const {
 			int index = _areaUniformSampler->sample(random);
 			_emissiveElements[index]->sampleEmissive(p, n, emissiveRadiance, random);
 		}

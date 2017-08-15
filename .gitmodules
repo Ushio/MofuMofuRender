@@ -7,3 +7,6 @@
 [submodule "libs/tinyobjloader"]
 	path = libs/tinyobjloader
 	url = https://github.com/syoyo/tinyobjloader.git
+[submodule "libs/fixed_size_function"]
+	path = libs/fixed_size_function
+	url = https://github.com/pmed/fixed_size_function.git
