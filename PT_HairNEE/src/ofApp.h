@@ -12,6 +12,7 @@
 #include "stopwatch.hpp"
 #include "stats.hpp"
 #include "transform.hpp"
+#include "objload.hpp"
 
 #define NO_WINDOW 0
 

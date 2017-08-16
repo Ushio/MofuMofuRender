@@ -55,6 +55,24 @@ namespace rt {
 
 	using Material = mapbox::util::variant<LambertianMaterial, SpecularMaterial, FurMaterial>;
 
+	struct TriangleSample {
+		double alpha = 0.0;
+		double beta = 0.0;
+
+		template <class T>
+		T evaluate(const T &A, const T &B, const T &C) const {
+			return A * alpha + B * (1.0 - beta) + C * (beta - alpha);
+		}
+	};
+
+	// eps1, eps2: uniform 0~1
+	inline TriangleSample uniform_on_triangle(double eps1, double eps2) {
+		TriangleSample s;
+		s.alpha = glm::min(eps1, eps2);
+		s.beta = glm::max(eps1, eps2);
+		return s;
+	}
+
 	inline Vec3 uniform_on_triangle(rt::PeseudoRandom *random, const Vec3 &a, const Vec3 &b, const Vec3 &c) {
 		auto u = random->uniform();
 		auto v = random->uniform();
@@ -519,7 +537,7 @@ namespace rt {
 			BVHBezierIntersection thisIntersection;
 			if (_bvh->intersect(ray, &thisIntersection, tmin)) {
 				FurMaterial fur;
-				fur.params.beta_n = 0.9;
+				fur.params.beta_n = 0.8;
 				fur.params.beta_m = 0.9;
 				fur.params.h = thisIntersection.h;
 				fur.params.sigma_a = _bvh->bezier(thisIntersection.bezierIndex).sigma_a;

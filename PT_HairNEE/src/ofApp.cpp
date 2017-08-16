@@ -36,29 +36,13 @@ inline std::shared_ptr<rt::Scene> scene_fromUnity() {
 	cameraSetting._up = Vec3(-0.4395704, 0.8813744, -0.1730812);
 	cameraSetting._fov = 1.047198;
 
+	// 引き
+	//cameraSetting._eye = Vec3(2.507, 1.297, 1.648);
+	//cameraSetting._lookat = Vec3(1.81928, 0.8427957, 1.081661);
+	//cameraSetting._up = Vec3(-0.4395704, 0.8813744, -0.1730812);
+	//cameraSetting._fov = 1.047198;
+
 	std::vector<std::shared_ptr<rt::SceneElement>> sceneElements;
-
-	// これは無駄な１枚
-	{
-		std::vector<Vec3> vertices = {
-			rt::Vec3(-0.5, 0.5, 0.0),
-			rt::Vec3(0.5, 0.5, 0.0),
-			rt::Vec3(-0.5,-0.5, 0.0),
-			rt::Vec3(0.5, -0.5, 0.0)
-		};
-		std::vector<int> indices = {
-			1, 0, 2,
-			1, 2, 3
-		};
-
-		Transform transform = Transform(Vec3(0, 0, 0), glm::angleAxis(-1.265752, Vec3(0.53636, -0.3051372, 0.7868984)), Vec3(1, 1, 1));
-		transform.apply(vertices);
-		std::shared_ptr<rt::PolygonSceneElement> floor(new rt::PolygonSceneElement(vertices, indices,
-			LambertianMaterial(rt::Vec3(0.0), rt::Vec3(0.75)),
-			false
-		));
-		sceneElements.push_back(floor);
-	}
 
 	{
 		std::vector<Vec3> vertices = {
@@ -302,28 +286,105 @@ void ofApp::setup() {
 	//	_scene = _scene->addElement(element);
 	//}
 
+	//{
+	//	std::vector<rt::BezierEntity> beziers;
+	//	rt::Xor random;
+	//	for (int i = 0; i < 300; ++i) {
+	//		auto p = rt::uniform_in_unit_circle(&random);
+	//		auto p1 = rt::Vec3(p.x, -1.0, p.y);
+	//		auto cp = p1 + rt::Vec3(random.uniform(-0.1, 0.1), 0.2, random.uniform(-0.1, 0.1));
+	//		auto p2 = cp + rt::Vec3(random.uniform(-0.1, 0.1), 0.2, random.uniform(-0.1, 0.1));
+
+	//		rt::BezierQuadratic3D bz(p1, cp, p2);
+
+	//		rt::BezierEntity e;
+	//		e.bezier = bz;
+	//		e.sigma_a = rt::Vec3(random.uniform(0.0, 0.8), random.uniform(0.0, 0.8), random.uniform(0.0, 0.8));
+	//		e.radius = random.uniform(0.003, 0.008);
+	//		beziers.push_back(e);
+	//	}
+	//	std::shared_ptr<rt::BezierBVHSceneElement> element(new rt::BezierBVHSceneElement(beziers));
+	//	_scene = _scene->addElement(element);
+	//}
+
+	_scene = scene_fromUnity();
+
 	{
+		std::vector<rt::TriangleFace> triangles = rt::loadObjWithTangent(ofToDataPath("araiguma/basic.obj"));
+		std::vector<double> areas;
+		for (int i = 0; i < triangles.size(); ++i) {
+			double area = rt::triangle_area(triangles[i].v[0], triangles[i].v[1], triangles[i].v[2]);
+			areas.push_back(area);
+		}
+		rt::AreaUniformSampler areaUniformSampler(areas);
+
 		std::vector<rt::BezierEntity> beziers;
+
+		ofPixels lengthMap;
+		ofPixels patternMap;
+		ofLoadImage(lengthMap, "araiguma/Length.png");
+		ofLoadImage(patternMap, "araiguma/Pattern.png");
+
 		rt::Xor random;
-		for (int i = 0; i < 300; ++i) {
-			auto p = rt::uniform_in_unit_circle(&random);
-			auto p1 = rt::Vec3(p.x, -1.0, p.y);
-			auto cp = p1 + rt::Vec3(random.uniform(-0.1, 0.1), 0.2, random.uniform(-0.1, 0.1));
-			auto p2 = cp + rt::Vec3(random.uniform(-0.1, 0.1), 0.2, random.uniform(-0.1, 0.1));
+		for (int i = 0; i < 30000; ++i) {
+			auto s = areaUniformSampler.sample(&random);
+			auto tri = triangles[s];
+			auto sample = rt::uniform_on_triangle(random.uniform(), random.uniform());
+			auto p = sample.evaluate(tri.v[0], tri.v[1], tri.v[2]);
 
-			rt::BezierQuadratic3D bz(p1, cp, p2);
+			auto n = sample.evaluate(tri.n[0], tri.n[1], tri.n[2]);
+			n = glm::normalize(n);
 
+			// 
+			auto texcoord = sample.evaluate(tri.t[0], tri.t[1], tri.t[2]);
+			int ux = lengthMap.getWidth() * texcoord.x;
+			int uv = lengthMap.getHeight() * (1.0 - texcoord.y);
+			ux = glm::clamp(ux, 0, (int)lengthMap.getWidth() - 1);
+			uv = glm::clamp(uv, 0, (int)lengthMap.getHeight() - 1);
+			auto hairLength = (double)lengthMap.getColor(ux, uv).r / 255.0;
+			auto hairPattern = (double)patternMap.getColor(ux, uv).r / 255.0;
+
+			auto tangent = sample.evaluate(tri.tangent[0], tri.tangent[1], tri.tangent[2]);
+			auto bitangent = sample.evaluate(tri.bitangent[0], tri.bitangent[1], tri.bitangent[2]);
+			tangent = glm::normalize(tangent);
+			bitangent = glm::normalize(bitangent);
+
+			// 毛のカーブ
+			auto n0 = glm::rotate(n, glm::radians(25.0), tangent);
+			auto n1 = glm::rotate(n, glm::radians(60.0 + random.uniform(-20.0, 10.0)), tangent);
+
+			auto random_1 = rt::Vec3(random.uniform(-1.0, 1.0), random.uniform(-1.0, 1.0), random.uniform(-1.0, 1.0)) * 0.02;
+			auto random_2 = rt::Vec3(random.uniform(-1.0, 1.0), random.uniform(-1.0, 1.0), random.uniform(-1.0, 1.0)) * 0.04;
+
+			// 毛の長さ
+			double baseLength = random.uniform(0.0, 0.05) + random.uniform(0.0, 0.05) + random.uniform(0.0, 0.05);
+
+			rt::BezierQuadratic3D bz(p,
+				p + n0 * baseLength * hairLength + random_1 ,
+				p + n0 * baseLength * hairLength + n1 * baseLength * hairLength + random_2 + bitangent * random.uniform(-1.0, 1.0) * 0.006
+			);
+
+			// 
+			using namespace rt;
+			Transform transform = Transform(Vec3(0.943, -0.11, 0.64), glm::angleAxis(-4.125526, Vec3(-0.7148883, 0.583186, -0.3857836)), Vec3(0.716475, 0.7164751, 0.7164751));
+			Quat base = glm::angleAxis(glm::radians(180.0), Vec3(0, 1, 0));
+			for (int j = 0; j < 3; ++j) {
+				bz[j] = transform * (base * bz[j]);
+			}
+
+			// 若干色にノイズを加えたほうが自然になる
+			double noisescale = 8.0;
+			double noise = glm::mix(1.0, 2.0, (double)ofNoise(p.x * noisescale, p.y * noisescale, p.z * noisescale));
 			rt::BezierEntity e;
 			e.bezier = bz;
-			e.sigma_a = rt::Vec3(random.uniform(0.0, 0.8), random.uniform(0.0, 0.8), random.uniform(0.0, 0.8));
-			e.radius = random.uniform(0.003, 0.008);
+			e.sigma_a = glm::mix(rt::Vec3(0.4, 0.6, 1.5) * 5.0, rt::Vec3(0.45, 0.65, 0.8) * noise * 0.4, hairPattern);
+			e.radius = 0.001;
 			beziers.push_back(e);
 		}
 		std::shared_ptr<rt::BezierBVHSceneElement> element(new rt::BezierBVHSceneElement(beziers));
 		_scene = _scene->addElement(element);
 	}
 
-	// _scene = scene_fromUnity();
 
 	_pt = std::shared_ptr<rt::PathTracer>(new rt::PathTracer(_scene));
 
