@@ -14,7 +14,7 @@
 #include "transform.hpp"
 #include "objload.hpp"
 
-#define NO_WINDOW 0
+#define NO_WINDOW 1
 
 class ofApp : public ofBaseApp{
 public:

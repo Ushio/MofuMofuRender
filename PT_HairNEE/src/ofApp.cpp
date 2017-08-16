@@ -28,8 +28,10 @@ inline std::shared_ptr<rt::Scene> scene_fromUnity() {
 	using namespace rt;
 
 	rt::CameraSetting cameraSetting;
-	cameraSetting._imageWidth = 320;
-	cameraSetting._imageHeight = 240;
+	//cameraSetting._imageWidth = 320;
+	//cameraSetting._imageHeight = 240;
+	cameraSetting._imageWidth = 320 * 2;
+	cameraSetting._imageHeight = 240 * 2;
 
 	cameraSetting._eye = Vec3(1.951, 0.93, 1.19);
 	cameraSetting._lookat = Vec3(1.26328, 0.4757957, 0.6236613);
@@ -69,7 +71,7 @@ inline std::shared_ptr<rt::Scene> scene_fromUnity() {
 		sceneElements.push_back(floor);
 	}
 
-	// キーライト
+	// キーライトの設定
 	{
 		std::vector<Vec3> vertices = {
 			rt::Vec3(-0.5, 0.5, 0.0),
@@ -92,7 +94,7 @@ inline std::shared_ptr<rt::Scene> scene_fromUnity() {
 		sceneElements.push_back(light);
 	}
 
-	// =============================
+	// ============================= 	
 	{
 		std::vector<Vec3> vertices = {
 			rt::Vec3(0.5, -0.5, 0.5),
@@ -238,8 +240,8 @@ inline std::shared_ptr<rt::Scene> scene_fromUnity() {
 		sceneElements.push_back(element);
 	}
 
-
 	return std::shared_ptr<rt::Scene>(new rt::Scene(cameraSetting, sceneElements));
+
 }
 
 
@@ -250,6 +252,8 @@ void ofApp::setup() {
 	static plog::ColorConsoleAppender<plog::TxtFormatter> consoleAppender;
 	static plog::RollingFileAppender<plog::TxtFormatter> fileAppender(ofToDataPath("../../log.txt").c_str());
 	plog::init(plog::debug, &consoleAppender).addAppender(&fileAppender);
+
+	LOG_DEBUG << "render begin...";
 
 #if NO_WINDOW == 0
 	_imgui.setup();
@@ -406,8 +410,7 @@ void ofApp::setup() {
 		}
 	}
 	_pt->_ibl = iblImage;
-
-	LOG_DEBUG << "render begin...";
+	
 }
 
 //--------------------------------------------------------------

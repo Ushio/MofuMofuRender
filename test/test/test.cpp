@@ -15,7 +15,7 @@
 
 int main(int argc, char* const argv[])
 {
-#if 1
+#if 0
 	// テストを指定する場合
 	char* const custom_argv[] = {
 		"",
