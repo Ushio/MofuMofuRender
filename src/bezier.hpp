@@ -236,18 +236,30 @@ namespace rt {
 		double bezier_t = 0.0;
 	};
 
+	// 曲線の先を尖らせる
 	inline bool intersect_bezier(int depth, double radius, double radiusSq, BezierQuadratic3D original, BezierQuadratic3D c, double v0, double v1, double *tmin, CurveIntersection *intersection)
 	{
+		// t -> radius係数(0 ~ 1)
+		auto radius_f = [](double t) {
+			// https://www.desmos.com/calculator/ttwuz1xm7u
+			constexpr double a = 1.0;
+			constexpr double b = 0.8;
+			constexpr double m = 1.0 / (b - a);
+			return glm::clamp((t - a) * m, 0.0, 1.0);
+		};
+
 		auto b = c.boundingBox();
+		double maxR = radius * radius_f(v1);
 		if (b.min_position.z >= *tmin || b.max_position.z <= glm::epsilon<double>()
-			|| b.min_position.x >= radius || b.max_position.x <= -radius
-			|| b.min_position.y >= radius || b.max_position.y <= -radius) {
+			|| b.min_position.x >= maxR || b.max_position.x <= -maxR
+			|| b.min_position.y >= maxR || b.max_position.y <= -maxR) {
 			/// the bounding box does not overlap the square
 			/// centered at O.
 			//ofSetColor(64);
 			//drawAABB(b);
 			return false;
-		} else if (depth == 0) {
+		}
+		else if (depth == 0) {
 			/// the maximum recursion depth is reached.
 			auto dir = c[2] - c[0];
 
@@ -263,10 +275,12 @@ namespace rt {
 			// double v = v0 * (1 - w) + v1 * w;
 			double v = glm::mix(v0, v1, w);
 
+			double radius_value = radius * radius_f(v);
+
 			// compare x-y distances.
 			auto p = original.evaluate(v);
 			double distanceSquared = p.x * p.x + p.y * p.y;
-			if (distanceSquared >= radiusSq || p.z <= glm::epsilon<double>()) {
+			if (distanceSquared >= radius_value * radius_value || p.z <= glm::epsilon<double>()) {
 				return false;
 			}
 
@@ -279,16 +293,16 @@ namespace rt {
 			*tmin = p.z;
 
 			// intersection->h = glm::sqrt(distanceSquared) / radius;
-			intersection->h = distanceRayRay(p, original.tangent(v)) / radius;
+			intersection->h = distanceRayRay(p, original.tangent(v)) / radius_value;
 			intersection->bezier_t = v;
 
 			Vec2 to_zero(-p.x, -p.y);
 			Vec2 rhs_dir(dir.y, -dir.x);
 			/*
 			どちらを横切るか？
-			  lhs
+			lhs
 			-(ray)-------->
-			  rhs
+			rhs
 			*/
 			bool isRhs = 0.0 > glm::dot(to_zero, rhs_dir);
 			if (isRhs) {
@@ -310,4 +324,80 @@ namespace rt {
 			return intersect_L || intersect_R;
 		}
 	}
+	
+	// 通常版
+	//inline bool intersect_bezier(int depth, double radius, double radiusSq, BezierQuadratic3D original, BezierQuadratic3D c, double v0, double v1, double *tmin, CurveIntersection *intersection)
+	//{
+	//	auto b = c.boundingBox();
+	//	if (b.min_position.z >= *tmin || b.max_position.z <= glm::epsilon<double>()
+	//		|| b.min_position.x >= radius || b.max_position.x <= -radius
+	//		|| b.min_position.y >= radius || b.max_position.y <= -radius) {
+	//		/// the bounding box does not overlap the square
+	//		/// centered at O.
+	//		//ofSetColor(64);
+	//		//drawAABB(b);
+	//		return false;
+	//	} else if (depth == 0) {
+	//		/// the maximum recursion depth is reached.
+	//		auto dir = c[2] - c[0];
+
+	//		// compute w on the line segment.
+	//		double w = dir.x * dir.x + dir.y * dir.y;
+	//		if (std::fabs(w) < 1.0e-12) {
+	//			return false;
+	//		}
+	//		w = -(c[0].x * dir.x + c[0].y * dir.y) / w;
+	//		w = glm::clamp(w, 0.0, 1.0);
+
+	//		// compute v on the curve segment.
+	//		// double v = v0 * (1 - w) + v1 * w;
+	//		double v = glm::mix(v0, v1, w);
+
+	//		// compare x-y distances.
+	//		auto p = original.evaluate(v);
+	//		double distanceSquared = p.x * p.x + p.y * p.y;
+	//		if (distanceSquared >= radiusSq || p.z <= glm::epsilon<double>()) {
+	//			return false;
+	//		}
+
+	//		// compare z distances.
+	//		if (*tmin < p.z) {
+	//			return false;
+	//		}
+
+	//		// tminは、コリジョンが成立するセグメント内での"中心"の最小を指す。ベジエの表面ではない
+	//		*tmin = p.z;
+
+	//		// intersection->h = glm::sqrt(distanceSquared) / radius;
+	//		intersection->h = distanceRayRay(p, original.tangent(v)) / radius;
+	//		intersection->bezier_t = v;
+
+	//		Vec2 to_zero(-p.x, -p.y);
+	//		Vec2 rhs_dir(dir.y, -dir.x);
+	//		/*
+	//		どちらを横切るか？
+	//		  lhs
+	//		-(ray)-------->
+	//		  rhs
+	//		*/
+	//		bool isRhs = 0.0 > glm::dot(to_zero, rhs_dir);
+	//		if (isRhs) {
+	//			intersection->h = -intersection->h;
+	//		}
+
+	//		return true;
+	//	}
+	//	else {
+	//		//ofSetColor(255);
+	//		//drawAABB(b);
+
+	//		double vm = (v0 + v1) * 0.5;
+	//		BezierQuadratic3D cl, cr;
+	//		std::tie(cl, cr) = c.split(0.5);
+
+	//		bool intersect_L = intersect_bezier(depth - 1, radius, radiusSq, original, cl, v0, vm, tmin, intersection);
+	//		bool intersect_R = intersect_bezier(depth - 1, radius, radiusSq, original, cr, vm, v1, tmin, intersection);
+	//		return intersect_L || intersect_R;
+	//	}
+	//}
 }
