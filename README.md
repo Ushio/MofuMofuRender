@@ -1,4 +1,14 @@
 # MofuMofuRender for rtcamp5
+
+## environment
+- windows 10 pro
+- visual studio 2015 community Update 3
+
+## openframeworks
+git location:
+    OF_ROOT/apps/MofuMofuRender
+- [openframeworks 0.9.8](http://openframeworks.cc/ja/)
+
 ## git dependencies
 git submodule update --init
 
