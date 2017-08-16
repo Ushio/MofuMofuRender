@@ -302,7 +302,12 @@ namespace rt {
 
 					Ray ray(lensP, glm::normalize(focalPoint - lensP));
 
-					image.add(x, y, radiance(scene, ray, random, ibl));
+					auto L = radiance(scene, ray, random, ibl);
+					// 念のために浮動小数点チェックとクランプ
+					if (glm::all(glm::isfinite(L))) {
+						L = glm::clamp(L, Vec3(0.0), Vec3(1000.0));
+						image.add(x, y, L);
+					}
 				}
 			}
 		});

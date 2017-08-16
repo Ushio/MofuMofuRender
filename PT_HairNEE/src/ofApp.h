@@ -15,6 +15,8 @@
 #include "objload.hpp"
 
 #define NO_WINDOW 1
+#define ENABLE_FUR 1
+#define AUTO_QUIT 1
 
 class ofApp : public ofBaseApp{
 public:

@@ -331,11 +331,16 @@ namespace rt {
 
 		if (depth < 5) {
 			tbb::task_group g;
-			g.run([&branch, &sah_context, beziers, random, depth]() {
-				branch->lhs = build_tree(sah_context.triangles_L, beziers, random, depth + 1);
+			uint32_t LSeed = random->generate();
+			uint32_t RSeed = random->generate();
+			
+			g.run([&branch, &sah_context, beziers, LSeed, depth]() {
+				Xor childRandomL(LSeed);
+				branch->lhs = build_tree(sah_context.triangles_L, beziers, &childRandomL, depth + 1);
 			});
-			g.run([&branch, &sah_context, beziers, random, depth]() {
-				branch->rhs = build_tree(sah_context.triangles_R, beziers, random, depth + 1);
+			g.run([&branch, &sah_context, beziers, RSeed, depth]() {
+				Xor childRandomR(RSeed);
+				branch->rhs = build_tree(sah_context.triangles_R, beziers, &childRandomR, depth + 1);
 			});
 			g.wait();
 		}

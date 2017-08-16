@@ -317,7 +317,7 @@ void ofApp::setup() {
 
 	_scene = scene_fromUnity();
 
-#if 1
+#if ENABLE_FUR
 	{
 		std::vector<rt::TriangleFace> triangles = rt::loadObjWithTangent(ofToDataPath("araiguma/basic.obj"));
 		std::vector<double> areas;
@@ -440,7 +440,9 @@ void ofApp::update(){
 
 		printf("saved %03d.png, %.1fs\n", index - 1, _wholeSW->elapsed());
 	}
+#endif
 
+#if AUTO_QUIT
 	if (_wholeSW->elapsed() + _stepStats.avarage() > 60.0 * 4.0 + 33.0) {
 		std::exit(0);
 	}
