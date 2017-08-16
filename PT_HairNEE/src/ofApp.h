@@ -14,9 +14,9 @@
 #include "transform.hpp"
 #include "objload.hpp"
 
-#define NO_WINDOW 1
+#define NO_WINDOW 0
 #define ENABLE_FUR 1
-#define AUTO_QUIT 1
+#define AUTO_QUIT 0
 
 class ofApp : public ofBaseApp{
 public:

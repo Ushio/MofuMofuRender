@@ -28,10 +28,10 @@ inline std::shared_ptr<rt::Scene> scene_fromUnity() {
 	using namespace rt;
 
 	rt::CameraSetting cameraSetting;
-	//cameraSetting._imageWidth = 320;
-	//cameraSetting._imageHeight = 240;
-	cameraSetting._imageWidth = 320 * 2;
-	cameraSetting._imageHeight = 240 * 2;
+	cameraSetting._imageWidth = 320;
+	cameraSetting._imageHeight = 240;
+	//cameraSetting._imageWidth = 320 * 2;
+	//cameraSetting._imageHeight = 240 * 2;
 
 	cameraSetting._eye = Vec3(1.951, 0.93, 1.19);
 	cameraSetting._lookat = Vec3(1.26328, 0.4757957, 0.6236613);
@@ -386,7 +386,9 @@ void ofApp::setup() {
 			double noise = glm::mix(1.0, 2.0, (double)ofNoise(p.x * noisescale, p.y * noisescale, p.z * noisescale));
 			rt::BezierEntity e;
 			e.bezier = bz;
-			e.sigma_a = glm::mix(rt::Vec3(0.4, 0.6, 1.5) * 5.0, rt::Vec3(0.45, 0.65, 0.8) * noise * 0.4, hairPattern);
+			// e.sigma_a = glm::mix(rt::Vec3(0.4, 0.6, 1.5) * 5.0, rt::Vec3(0.45, 0.65, 0.8) * noise * 0.4, hairPattern);
+			// e.sigma_a = glm::mix(rt::Vec3(0.5, 0.7, 0.4) * 7.0, rt::Vec3(0.55, 0.57, 0.5) * noise * 0.4, hairPattern);
+			e.sigma_a = glm::mix(rt::Vec3(0.55, 0.52, 0.45) * 2.0, rt::Vec3(0.55, 0.52, 0.35) * noise * 0.4, hairPattern);
 			e.radius = 0.001;
 			beziers.push_back(e);
 		}
