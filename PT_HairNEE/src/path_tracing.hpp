@@ -2,6 +2,7 @@
 
 #include <tbb/tbb.h>
 #include "scene.hpp"
+#include "misc.hpp"
 #include <fixed_size_function.hpp>
 
 namespace rt {
@@ -45,7 +46,46 @@ namespace rt {
 		std::vector<Pixel> _pixels;
 	};
 
-	inline Vec3 radiance(std::shared_ptr<rt::Scene> scene, Ray ray, PeseudoRandom *random) {
+
+	class IBL {
+	public:
+		IBL() {}
+		IBL(int w, int h) :_w(w), _h(h), _pixels(h*w) {
+
+		}
+		int width() const {
+			return _w;
+		}
+		int height() const {
+			return _h;
+		}
+
+		Vec3 radiance(Vec3 wi) const {
+			double phi = atan2(wi.x, wi.z);
+			double cosTheta = wi.y;
+			double theta = acos(cosTheta);
+			static Remap toX(-glm::pi<double>(), glm::pi<double>(), 0, _w);
+			static Remap toY(0.0, glm::pi<double>(), 0, _h);
+			int x = toX(phi);
+			int y = toY(theta);
+			x = glm::clamp(0, x, _w - 1);
+			y = glm::clamp(0, y, _h - 1);
+			return *pixel(x, y);
+		}
+
+		const Vec3 *pixel(int x, int y) const {
+			return _pixels.data() + y * _w + x;
+		}
+		Vec3 *pixel(int x, int y) {
+			return _pixels.data() + y * _w + x;
+		}
+	private:
+		int _w = 0;
+		int _h = 0;
+		std::vector<Vec3> _pixels;
+	};
+
+	inline Vec3 radiance(std::shared_ptr<rt::Scene> scene, Ray ray, PeseudoRandom *random, const IBL &ibl) {
 		// 光源はLambertianMaterialのみであるので、パラメータはこれだけでOK
 		fixed_size_function<double(Vec3, Vec3), 128> evaluate_mis_weight_implicit = [](Vec3 light_p, Vec3 light_n) {
 			return 1.0;
@@ -230,14 +270,16 @@ namespace rt {
 				}
 			}
 			else {
-				// ここでIBLをサンプルするか？
+				// IBL
+				// IBLをサンプルする戦略は今回は暗黙の寄与のみであり、そのためMIS Weightは 1
+				Lo += ibl.radiance(ray.d) * T;
 				break;
 			}
 		}
 		return Lo;
 	}
 
-	inline void step_image(std::shared_ptr<rt::Scene> scene, Image &image) {
+	inline void step_image(std::shared_ptr<rt::Scene> scene, Image &image, const IBL &ibl) {
 		auto camera = scene->camera();
 		tbb::parallel_for(tbb::blocked_range<int>(0, camera->imageHeight()), [&](const tbb::blocked_range<int> &range) {
 			for (int y = range.begin(); y < range.end(); ++y) {
@@ -245,12 +287,27 @@ namespace rt {
 					PeseudoRandom *random = &image.pixel(x, y)->random;
 					double dx = random->uniform(-0.5, 0.5);
 					double dy = random->uniform(-0.5, 0.5);
-					Ray ray = camera->generateRay(x + dx, y + dy);
-					image.add(x, y, radiance(scene, ray, random));
+					// Ray ray = camera->generateRay(x + dx, y + dy);
+
+					auto camera = scene->_camera;
+					auto filmP = camera->filmToWorld(x + dx, y + dy);
+					auto lensP = camera->sampleLens(random);
+					auto lenspA = 1.0 / camera->lensArea();
+
+					auto toFocal = glm::normalize(camera->origin() - filmP);
+					auto toFocalStep = glm::dot(toFocal, camera->front());
+					auto focalTmin = camera->_setting._focalLength / toFocalStep;
+					auto focalPoint = camera->origin() + toFocal * focalTmin;
+					auto filmToLens = lensP - filmP;
+
+					Ray ray(lensP, glm::normalize(focalPoint - lensP));
+
+					image.add(x, y, radiance(scene, ray, random, ibl));
 				}
 			}
 		});
 	}
+
 
 	class PathTracer {
 	public:
@@ -260,9 +317,10 @@ namespace rt {
 
 		}
 		void step() {
-			step_image(_scene, _image);
+			step_image(_scene, _image, _ibl);
 		}
 		std::shared_ptr<rt::Scene> _scene;
 		Image _image;
+		IBL _ibl;
 	};
 }

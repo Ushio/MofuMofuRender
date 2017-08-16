@@ -36,7 +36,10 @@ inline std::shared_ptr<rt::Scene> scene_fromUnity() {
 	cameraSetting._up = Vec3(-0.4395704, 0.8813744, -0.1730812);
 	cameraSetting._fov = 1.047198;
 
-	// ˆø‚«
+	cameraSetting._focalLength = 1.2;
+	cameraSetting._lensRadius = 0.015;
+
+	// å¼•ã
 	//cameraSetting._eye = Vec3(2.507, 1.297, 1.648);
 	//cameraSetting._lookat = Vec3(1.81928, 0.8427957, 1.081661);
 	//cameraSetting._up = Vec3(-0.4395704, 0.8813744, -0.1730812);
@@ -66,6 +69,7 @@ inline std::shared_ptr<rt::Scene> scene_fromUnity() {
 		sceneElements.push_back(floor);
 	}
 
+	// ã‚­ãƒ¼ãƒ©ã‚¤ãƒˆ
 	{
 		std::vector<Vec3> vertices = {
 			rt::Vec3(-0.5, 0.5, 0.0),
@@ -82,7 +86,7 @@ inline std::shared_ptr<rt::Scene> scene_fromUnity() {
 			vertices[i] = transform * vertices[i];
 		}
 		std::shared_ptr<rt::PolygonSceneElement> light(new rt::PolygonSceneElement(vertices, indices,
-			LambertianMaterial(rt::Vec3(10.0), rt::Vec3(0.75)),
+			LambertianMaterial(rt::Vec3(1.0, 0.9, 0.8) * 10.0, rt::Vec3(0.75)),
 			false
 		));
 		sceneElements.push_back(light);
@@ -309,6 +313,7 @@ void ofApp::setup() {
 
 	_scene = scene_fromUnity();
 
+#if 1
 	{
 		std::vector<rt::TriangleFace> triangles = rt::loadObjWithTangent(ofToDataPath("araiguma/basic.obj"));
 		std::vector<double> areas;
@@ -349,14 +354,14 @@ void ofApp::setup() {
 			tangent = glm::normalize(tangent);
 			bitangent = glm::normalize(bitangent);
 
-			// –Ñ‚ÌƒJ[ƒu
+			// æ¯›ã®ã‚«ãƒ¼ãƒ–
 			auto n0 = glm::rotate(n, glm::radians(25.0), tangent);
 			auto n1 = glm::rotate(n, glm::radians(60.0 + random.uniform(-20.0, 10.0)), tangent);
 
 			auto random_1 = rt::Vec3(random.uniform(-1.0, 1.0), random.uniform(-1.0, 1.0), random.uniform(-1.0, 1.0)) * 0.02;
 			auto random_2 = rt::Vec3(random.uniform(-1.0, 1.0), random.uniform(-1.0, 1.0), random.uniform(-1.0, 1.0)) * 0.04;
 
-			// –Ñ‚Ì’·‚³
+			// æ¯›ã®é•·ã•
 			double baseLength = random.uniform(0.0, 0.05) + random.uniform(0.0, 0.05) + random.uniform(0.0, 0.05);
 
 			rt::BezierQuadratic3D bz(p,
@@ -372,7 +377,7 @@ void ofApp::setup() {
 				bz[j] = transform * (base * bz[j]);
 			}
 
-			// áŠ±F‚ÉƒmƒCƒY‚ğ‰Á‚¦‚½‚Ù‚¤‚ª©‘R‚É‚È‚é
+			// è‹¥å¹²è‰²ã«ãƒã‚¤ã‚ºã‚’åŠ ãˆãŸã»ã†ãŒè‡ªç„¶ã«ãªã‚‹
 			double noisescale = 8.0;
 			double noise = glm::mix(1.0, 2.0, (double)ofNoise(p.x * noisescale, p.y * noisescale, p.z * noisescale));
 			rt::BezierEntity e;
@@ -384,9 +389,23 @@ void ofApp::setup() {
 		std::shared_ptr<rt::BezierBVHSceneElement> element(new rt::BezierBVHSceneElement(beziers));
 		_scene = _scene->addElement(element);
 	}
-
+#endif
 
 	_pt = std::shared_ptr<rt::PathTracer>(new rt::PathTracer(_scene));
+
+	ofPixels ibl;
+	ofLoadImage(ibl, "IBL.png");
+	ibl.setImageType(OF_IMAGE_COLOR);
+
+	rt::IBL iblImage(ibl.getWidth(), ibl.getHeight());
+	const uint8_t *pixels = ibl.getPixels();
+	for (int y = 0; y < iblImage.height(); ++y) {
+		for (int x = 0; x < iblImage.width(); ++x) {
+			int index = (y * ibl.getWidth() + x) * 3;
+			*iblImage.pixel(x, y) = rt::Vec3(pixels[index], pixels[index + 1], pixels[index + 2]) / 255.0;
+		}
+	}
+	_pt->_ibl = iblImage;
 
 	LOG_DEBUG << "render begin...";
 }
