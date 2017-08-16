@@ -87,7 +87,6 @@ namespace rt {
 		Vec3 operator*(const Vec3 &p) const {
 			return rotation * (p + move);
 		}
-
 		Vec3 move;
 		Mat3 rotation;
 	};
@@ -118,27 +117,6 @@ namespace rt {
 		return MoveAndRotate(move, r);
 	}
 
-	//inline Mat3 basisMatrix(Vec3 yaxis) {
-	//	Vec3 xaxis;
-	//	Vec3 zaxis;
-	//	if (0.999 < glm::abs(yaxis.z)) {
-	//		xaxis = glm::normalize(glm::cross(Vec3(0.0, -1.0, 0.0), yaxis));
-	//	}
-	//	else {
-	//		xaxis = glm::normalize(glm::cross(Vec3(0.0, 0.0, 1.0), yaxis));
-	//	}
-	//	zaxis = glm::cross(xaxis, yaxis);
-	//	return Mat3(xaxis, yaxis, zaxis);
-	//}
-
-	//inline void drawAABB(rt::AABB aabb) {
-	//	auto sR = aabb.size();
-	//	auto cR = aabb.center();
-	//	ofNoFill();
-	//	ofDrawBox(cR.x, cR.y, cR.z, sR.x, sR.y, sR.z);
-	//	ofFill();
-	//}
-
 	inline Vec3 bezier(Vec3 p0, Vec3 cp, Vec3 p1, double t)
 	{
 		Vec3 mm0 = glm::mix(p0, cp, t);
@@ -154,11 +132,11 @@ namespace rt {
 	public:
 		BezierQuadratic3D() {
 		}
-		BezierQuadratic3D(Vec3 p0, Vec3 cp, Vec3 p1) {
-			//  :_ps({ p0, cp, p1 }) 
-			_ps[0] = p0;
-			_ps[1] = cp;
-			_ps[2] = p1;
+		BezierQuadratic3D(Vec3 p0, Vec3 cp, Vec3 p1) :_ps({ p0, cp, p1 }) {
+			  
+			//_ps[0] = p0;
+			//_ps[1] = cp;
+			//_ps[2] = p1;
 		}
 		const Vec3 &operator[](int i) const {
 			return _ps[i];
@@ -171,13 +149,6 @@ namespace rt {
 		}
 		Vec3 tangent(double t) const {
 			return bezier_tangent(_ps[0], _ps[1], _ps[2], t);
-		}
-		BezierQuadratic3D transform(Mat4 m) const {
-			return BezierQuadratic3D(
-				m * Vec4(_ps[0], 1.0),
-				m * Vec4(_ps[1], 1.0),
-				m * Vec4(_ps[2], 1.0)
-			);
 		}
 		BezierQuadratic3D transform(const MoveAndRotate m) const {
 			return BezierQuadratic3D(
@@ -237,7 +208,7 @@ namespace rt {
 	};
 
 	// 曲線の先を尖らせる
-	inline bool intersect_bezier(int depth, double radius, double radiusSq, BezierQuadratic3D original, BezierQuadratic3D c, double v0, double v1, double *tmin, CurveIntersection *intersection)
+	inline bool intersect_bezier(int depth, double radius, double radiusSq, const BezierQuadratic3D &original, const BezierQuadratic3D &c, double v0, double v1, double *tmin, CurveIntersection *intersection)
 	{
 		// t -> radius係数(0 ~ 1)
 		auto radius_f = [](double t) {
@@ -326,7 +297,7 @@ namespace rt {
 	}
 	
 	// 通常版
-	//inline bool intersect_bezier(int depth, double radius, double radiusSq, BezierQuadratic3D original, BezierQuadratic3D c, double v0, double v1, double *tmin, CurveIntersection *intersection)
+	//inline bool intersect_bezier(int depth, double radius, double radiusSq, const BezierQuadratic3D &original, const BezierQuadratic3D &c, double v0, double v1, double *tmin, CurveIntersection *intersection)
 	//{
 	//	auto b = c.boundingBox();
 	//	if (b.min_position.z >= *tmin || b.max_position.z <= glm::epsilon<double>()
