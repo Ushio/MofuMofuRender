@@ -28,10 +28,9 @@ inline std::shared_ptr<rt::Scene> scene_fromUnity() {
 	using namespace rt;
 
 	rt::CameraSetting cameraSetting;
-	//cameraSetting._imageWidth = 320;
-	//cameraSetting._imageHeight = 240;
-	cameraSetting._imageWidth = 320 * 2;
-	cameraSetting._imageHeight = 240 * 2;
+	cameraSetting._imageWidth = IMAGE_WIDTH;
+	cameraSetting._imageHeight = IMAGE_HEIGHT;
+
 
 	cameraSetting._eye = Vec3(1.951, 0.93, 1.19);
 	cameraSetting._lookat = Vec3(1.26328, 0.4757957, 0.6236613);

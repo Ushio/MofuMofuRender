@@ -18,6 +18,10 @@
 #define ENABLE_FUR 1
 #define AUTO_QUIT 0
 
+static const int IMAGE_WIDTH = 320;
+static const int IMAGE_HEIGHT = 240;
+//static const int IMAGE_WIDTH = 320 * 2;
+//static const int IMAGE_HEIGHT = 240 * 2;
 class ofApp : public ofBaseApp{
 public:
 	void setup();

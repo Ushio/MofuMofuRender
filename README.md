@@ -30,3 +30,6 @@ ofxImGui to addons folder
 - [catch](https://github.com/philsquared/Catch)
 
 
+## main
+PT_HairNEE/PT_HairNEE.sln
+PathTracing, NextEventEstimation Multiple Importance Sampling
