@@ -50,6 +50,23 @@ namespace rt {
 	}
 
 	/*
+	レイとレイの最近傍距離の平方を返す
+	レイは正規化されている必要はない
+	http://www.math.kit.edu/ianm2/lehre/am22016s/media/distance-harvard.pdf
+	L(t) = q + t * u
+	M(t) = p + t * v
+	*/
+	inline double distanceSqRayRay(const rt::Vec3 &q, const rt::Vec3 &u, const rt::Vec3 &p, const rt::Vec3 &v) {
+		rt::Vec3 pq = q - p;
+		rt::Vec3 uxv = glm::cross(u, v);
+		double denom = glm::length2(uxv);
+		if (denom < glm::epsilon<double>()) {
+			return glm::distance2(q, p);
+		}
+		return glm::length2(glm::dot(pq, uxv)) / denom;
+	}
+
+	/*
 	レイとレイの最近傍距離を返す
 	rt::Vec3 q = Vec3(0, 0, 0);
 	rt::Vec3 u = Vec3(0, 0, 1);

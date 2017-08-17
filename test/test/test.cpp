@@ -40,7 +40,7 @@ TEST_CASE("Ray Distance", "[Ray Distance]") {
 		return rt::Vec3(random.uniform(-1.0, 1.0), random.uniform(-1.0, 1.0), random.uniform(-1.0, 1.0));
 	};
 
-	for (int i = 0; i < 10000; ++i) {
+	for (int i = 0; i < 50000; ++i) {
 		rt::Ray ray1(r() * 10.0, rt::uniform_on_unit_sphere(&random));
 		rt::Ray ray2(r() * 10.0, rt::uniform_on_unit_sphere(&random));
 
@@ -53,6 +53,9 @@ TEST_CASE("Ray Distance", "[Ray Distance]") {
 
 		// 同じ結果になるはずだ
 		REQUIRE(glm::abs(closest_distance - rt::distanceRayRay(ray1.o, ray1.d, ray2.o, ray2.d)) < 0.00001);
+		
+		// 同じ結果になるはずだ
+		REQUIRE(glm::abs(closest_distance - glm::sqrt(rt::distanceSqRayRay(ray1.o, ray1.d, ray2.o, ray2.d))) < 0.00001);
 
 		// 最近傍であるなら、ちょっとs, tを動かした距離は、必ず最近傍よりも遠くなるべきだ
 		for (int j = 0; j < 1000; ++j) {
@@ -65,7 +68,7 @@ TEST_CASE("Ray Distance", "[Ray Distance]") {
 		}
 	}
 
-	for (int i = 0; i < 10000; ++i) {
+	for (int i = 0; i < 50000; ++i) {
 		rt::Ray ray1(rt::Vec3(), rt::Vec3(0, 0, 1));
 		rt::Ray ray2(r() * 10.0, rt::uniform_on_unit_sphere(&random));
 

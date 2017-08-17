@@ -9,7 +9,7 @@
 #include "peseudo_random.hpp"
 #include "aabb.hpp"
 #include "bezier.hpp"
-
+#include "misc.hpp"
 #include <tbb/tbb.h>
 
 namespace rt {
@@ -362,13 +362,22 @@ namespace rt {
 	};
 
 	// 最も基本のBVH衝突判定
-	inline bool intersect_bvh(const Ray &ray, const Vec3 &inv_d, const MoveAndRotate &projection, const BVHNode &node, const BezierEntity *beziers, BVHBezierIntersection *intersection, double *tmin) {
+	inline bool intersect_bvh(const Ray &ray, const Vec3 &inv_d, const MoveAndRotate &projection, const BVHNode &node, const BezierEntity *beziers, const double *maxDistanceSqsFromSegment, BVHBezierIntersection *intersection, double *tmin) {
 		bool intersected = false;
 		if (node.is<BVHLeaf>()) {
 			const BVHLeaf &leaf = node.get<BVHLeaf>();
 			for (int i = 0; i < leaf.bezierIndices.size(); ++i) {
 				auto index = leaf.bezierIndices[i];
-				auto bezier = beziers[index].bezier.transform(projection);
+
+				// 直線からの最大距離よりも離れている場合は、衝突はありえないので、早期に枝刈りをする
+				// AABB による判定はかなりざっくりなので、とても効果がある
+				const BezierQuadratic3D &origBezier = beziers[index].bezier;
+				if (maxDistanceSqsFromSegment[index] < distanceSqRayRay(ray.o, ray.d, origBezier[0], origBezier[2] - origBezier[0])) {
+					continue;
+				}
+
+				const BezierQuadratic3D &bezier = beziers[index].bezier.transform(projection);
+
 				auto radius = beziers[index].radius;
 				rt::CurveIntersection thisIntersection;
 				bool isect = rt::intersect_bezier(4, radius, radius * radius, bezier, bezier, 0.0, 1.0, tmin, &thisIntersection);
@@ -389,13 +398,13 @@ namespace rt {
 		else {
 			const std::unique_ptr<BVHBranch> &branch = node.get<std::unique_ptr<BVHBranch>>();
 			if (auto aabb_tmin = intersect_aabb(ray, inv_d, branch->aabb_L)) {
-				if (intersect_bvh(ray, inv_d, projection, branch->lhs, beziers, intersection, tmin)) {
+				if (intersect_bvh(ray, inv_d, projection, branch->lhs, beziers, maxDistanceSqsFromSegment, intersection, tmin)) {
 					intersected = true;
 				}
 			}
 
 			if (auto aabb_tmin = intersect_aabb(ray, inv_d, branch->aabb_R)) {
-				if (intersect_bvh(ray, inv_d, projection, branch->rhs, beziers, intersection, tmin)) {
+				if (intersect_bvh(ray, inv_d, projection, branch->rhs, beziers, maxDistanceSqsFromSegment, intersection, tmin)) {
 					intersected = true;
 				}
 			}
@@ -467,6 +476,9 @@ namespace rt {
 	class BezierBVH {
 	public:
 		BezierBVH(const std::vector<BezierEntity> &beziers):_beziers(beziers) {
+
+
+
 			std::vector<int> bezierIndices;
 			for (int i = 0; i < _beziers.size(); ++i) {
 				bezierIndices.push_back(i);
@@ -481,6 +493,25 @@ namespace rt {
 				bbox.expand(bezierEntity.radius);
 				_aabb.expand(bbox);
 			}
+
+			// ブリュートフォースのタイトフィッティング
+			_maxDistanceSqsFromSegment.resize(_beziers.size());
+			for (int i = 0; i < _beziers.size(); ++i) {
+				auto bezier = _beziers[i];
+
+				double maxDistanceSq = 0.0;
+				const int NSplit = 1000;
+				for (int j = 0; j < NSplit; ++j) {
+					static Remap toT(0, NSplit - 1, 0.0, 1.0);
+					double t = toT(j);
+					auto p = bezier.bezier.evaluate(t);
+					double distanceSq = rt::distanceSqPointRay(p, bezier.bezier[0], bezier.bezier[2] - bezier.bezier[0]);
+					double d = glm::sqrt(distanceSq);
+					double maxDistance = (d + bezier.radius);
+					maxDistanceSq = std::max(maxDistanceSq, maxDistance * maxDistance);
+				}
+				_maxDistanceSqsFromSegment[i] = maxDistanceSq;
+			}
 		}
 		bool intersect(const Ray &ray, BVHBezierIntersection *intersection, double *tmin) const {
 			if (glm::all(glm::isfinite(ray.d) && glm::isfinite(ray.o)) == false) {
@@ -491,7 +522,7 @@ namespace rt {
 				auto projection = rt::ray_projection(ray.o, ray.d);
 
 				// Simple
-				return intersect_bvh(ray, inv_d, projection, _node, _beziers.data(), intersection, tmin);
+				return intersect_bvh(ray, inv_d, projection, _node, _beziers.data(), _maxDistanceSqsFromSegment.data(), intersection, tmin);
 
 				// Flat
 				// return intersect_bvh(ray, inv_d, _flatten, 1, _vertices.data(), intersection, tmin);
@@ -507,6 +538,10 @@ namespace rt {
 
 		AABB _aabb;
 		std::vector<BezierEntity> _beziers;
+
+		// 早期枝刈りのための、線分からの最大距離の平方を前計算する
+		std::vector<double> _maxDistanceSqsFromSegment;
+		
 		BVHNode _node;
 		Xor _random;
 

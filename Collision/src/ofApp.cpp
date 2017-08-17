@@ -1,23 +1,24 @@
 #include "ofApp.h"
 
-//rt::Ray ray1;
-//rt::Ray ray2;
+rt::Ray ray1;
+rt::Ray ray2;
+
 //
 //inline float ClosestPtSegmentSegment(rt::Vec3 p1, rt::Vec3 d1, rt::Vec3 p2, rt::Vec3 d2, double &s, double &t, rt::Vec3 &c1, rt::Vec3 &c2)
 //{
 //	using namespace rt;
 //	Vec3 r = p1 - p2;
-//	float a = glm::dot(d1, d1); // ü•ªS1‚Ì‹——£‚Ì•½•ûAí‚É”ñ•‰
-//	float e = glm::dot(d2, d2); // ü•ªS2‚Ì‹——£‚Ì•½•ûAí‚É”ñ•‰
+//	float a = glm::dot(d1, d1); // ç·šåˆ†S1ã®è·é›¢ã®å¹³æ–¹ã€å¸¸ã«éè² 
+//	float e = glm::dot(d2, d2); // ç·šåˆ†S2ã®è·é›¢ã®å¹³æ–¹ã€å¸¸ã«éè² 
 //	float f = glm::dot(d2, r);
 //
-//	// ‚±‚±‚©‚çˆê”Ê“I‚Èk‘Ş‚Ìê‡‚ğŠJn
+//	// ã“ã“ã‹ã‚‰ä¸€èˆ¬çš„ãªç¸®é€€ã®å ´åˆã‚’é–‹å§‹
 //	float b = glm::dot(d1, d2);
-//	float denom = a*e - b*b; // í‚É”ñ•‰
+//	float denom = a*e - b*b; // å¸¸ã«éè² 
 //
 //	float c = glm::dot(d1, r);
-//	// ü•ª‚ª•½s‚Å‚È‚¢ê‡AL1ã‚ÌL2‚É‘Î‚·‚éÅ‹ßÚ“_‚ğŒvZA‚»‚µ‚Ä
-//	// ü•ªS1‚É‘Î‚µ‚ÄƒNƒ‰ƒ“ƒvB‚»‚¤‚Å‚È‚¢ê‡‚Í”CˆÓs(‚±‚±‚Å‚Í0)‚ğ‘I‘ğ
+//	// ç·šåˆ†ãŒå¹³è¡Œã§ãªã„å ´åˆã€L1ä¸Šã®L2ã«å¯¾ã™ã‚‹æœ€è¿‘æ¥ç‚¹ã‚’è¨ˆç®—ã€ãã—ã¦
+//	// ç·šåˆ†S1ã«å¯¾ã—ã¦ã‚¯ãƒ©ãƒ³ãƒ—ã€‚ãã†ã§ãªã„å ´åˆã¯ä»»æ„s(ã“ã“ã§ã¯0)ã‚’é¸æŠ
 //	if (denom != 0.0f) {
 //		// s = Clamp((b*f - c*e) / denom, 0.0f, 1.0f);
 //		s = (b*f - c*e) / denom;
@@ -25,7 +26,7 @@
 //	else {
 //		s = 0.0f;
 //	}
-//	// L2ã‚ÌS1(s)‚É‘Î‚·‚éÅ‹ßÚ“_‚ğˆÈ‰º‚ğ—p‚¢‚ÄŒvZ
+//	// L2ä¸Šã®S1(s)ã«å¯¾ã™ã‚‹æœ€è¿‘æ¥ç‚¹ã‚’ä»¥ä¸‹ã‚’ç”¨ã„ã¦è¨ˆç®—
 //	// t = Dot((P1+D1*s)-P2,D2) / Dot(D2,D2) = (b*s + f) / e
 //	t = (b*s + f) / e;
 //
@@ -160,6 +161,9 @@ void ofApp::draw(){
 
 		ofFill();
 	};
+
+	// ã‚³ãƒªã‚¸ãƒ§ãƒ³ãƒ†ã‚¹ãƒˆ
+#if 1
 	drawBezier(_bezierQuadratic);
 	int NRay = 300;
 	for (int i = 0; i < NRay; ++i) {
@@ -173,7 +177,7 @@ void ofApp::draw(){
 		double tmin = std::numeric_limits<double>::max();
 		rt::CurveIntersection intersection;
 
-		bool intersected = rt::intersect_bezier(15, radius, radius * radius, bezier, bezier, 0.0, 1.0, &tmin, &intersection);
+		bool intersected = rt::intersect_bezier_standard(15, radius, radius * radius, bezier, bezier, 0.0, 1.0, &tmin, &intersection);
 
 		// origin rejection
 		if (intersected) {
@@ -198,26 +202,30 @@ void ofApp::draw(){
 			ofDrawLine(toOf(o), toOf(o + d * 5.0));
 		}
 	}
+#endif
 
-	//ofSetColor(ofColor::orange);
-	//ofDrawSphere(toOf(ray1.o), 0.05f);
-	//ofDrawLine(toOf(ray1.o - ray1.d * 5.0), toOf(ray1.o + ray1.d * 5.0));
-	//
-	//ofSetColor(ofColor::red);
-	//ofDrawSphere(toOf(ray2.o), 0.05f);
-	//ofDrawLine(toOf(ray2.o - ray2.d * 5.0), toOf(ray2.o + ray2.d * 5.0));
+#if 0
+	ofSetColor(ofColor::orange);
+	ofDrawSphere(toOf(ray1.o), 0.05f);
+	ofDrawLine(toOf(ray1.o - ray1.d * 5.0), toOf(ray1.o + ray1.d * 5.0));
+	
+	ofSetColor(ofColor::red);
+	ofDrawSphere(toOf(ray2.o), 0.05f);
+	ofDrawLine(toOf(ray2.o - ray2.d * 5.0), toOf(ray2.o + ray2.d * 5.0));
 
-	//double s, t;
-	//rt::Vec3 p1, p2;
-	//ClosestPtSegmentSegment(ray1.o, ray1.d, ray2.o, ray2.d, s, t, p1, p2);
+	double s, t;
+	std::tie(s, t) = rt::closestRayRayST(ray1.o, ray1.d, ray2.o, ray2.d);
+	rt::Vec3 p1 = ray1.o + ray1.d * s;
+	rt::Vec3 p2 = ray2.o + ray2.d * t;
 
-	//ofSetColor(ofColor::green);
-	//ofDrawLine(toOf(p1), toOf(p2));
+	ofSetColor(ofColor::green);
+	ofDrawLine(toOf(p1), toOf(p2));
 
 	_camera.end();
 
 	ofDisableDepthTest();
 	ofSetColor(255);
+#endif
 
 	// _image.draw(0, 0);
 
@@ -247,7 +255,6 @@ void ofApp::draw(){
 	} else {
 		_camera.enableMouseInput();
 	}
-
 }
 
 //--------------------------------------------------------------
@@ -259,8 +266,8 @@ void ofApp::keyPressed(int key){
 		};
 		_bezierQuadratic = rt::BezierQuadratic3D(r(), r(), r());
 
-		//ray1 = rt::Ray(r(), rt::uniform_on_unit_sphere(&random));
-		//ray2 = rt::Ray(r(), rt::uniform_on_unit_sphere(&random));
+		ray1 = rt::Ray(r(), rt::uniform_on_unit_sphere(&random));
+		ray2 = rt::Ray(r(), rt::uniform_on_unit_sphere(&random));
 	}
 }
 
