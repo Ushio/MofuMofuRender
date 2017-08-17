@@ -15,11 +15,11 @@
 
 int main(int argc, char* const argv[])
 {
-#if 0
+#if 1
 	// テストを指定する場合
 	char* const custom_argv[] = {
 		"",
-		"[Fur PDF]"
+		"[Ray Distance]"
 	};
 	Catch::Session().run(sizeof(custom_argv) / sizeof(custom_argv[0]), custom_argv);
 #else
@@ -32,6 +32,37 @@ int main(int argc, char* const argv[])
 
 	std::cin.get();
 	return 0;
+}
+
+TEST_CASE("Ray Distance", "[Ray Distance]") {
+	rt::Xor random;
+	auto r = [&random]() {
+		return rt::Vec3(random.uniform(-1.0, 1.0), random.uniform(-1.0, 1.0), random.uniform(-1.0, 1.0));
+	};
+
+	for (int i = 0; i < 10000; ++i) {
+		rt::Ray ray1(r() * 10.0, rt::uniform_on_unit_sphere(&random));
+		rt::Ray ray2(r() * 10.0, rt::uniform_on_unit_sphere(&random));
+
+		// 
+		double s, t;
+		std::tie(s, t) = rt::closestRayRayST(ray1.o, ray1.d, ray2.o, ray2.d);
+		rt::Vec3 p1 = ray1.o + ray1.d * s;
+		rt::Vec3 p2 = ray2.o + ray2.d * t;
+		double closest_distance = glm::distance(p1, p2);
+
+		REQUIRE(glm::abs(closest_distance - rt::distanceRayRay(ray1.o, ray1.d, ray2.o, ray2.d)) < 0.00001);
+
+		// 最近傍であるなら、ちょっとs, tを動かした距離は、必ず最近傍よりも遠くなるべきだ
+		for (int j = 0; j < 1000; ++j) {
+			double dist = (random.uniform() > 0.5) ? 10.0 : 0.01;
+			rt::Vec3 p1_tap = ray1.o + ray1.d * (s + random.uniform(-1.0, 1.0) * dist);
+			rt::Vec3 p2_tap = ray2.o + ray2.d * (t + random.uniform(-1.0, 1.0) * dist);
+			double closest_distance_tap = glm::distance(p1_tap, p2_tap);
+			
+			REQUIRE(closest_distance < closest_distance_tap);
+		}
+	}
 }
 
 TEST_CASE("Simpson", "[Simpson]") {

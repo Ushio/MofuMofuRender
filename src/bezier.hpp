@@ -4,9 +4,34 @@
 #include "geometry.hpp"
 #include "aabb.hpp"
 #include "catch.hpp"
-#include <immintrin.h>
+#include <tuple>
 
 namespace rt {
+	/*
+	レイとレイの最近傍距離を返す
+	レイは正規化されている必要はない
+	*/
+	inline std::tuple<double, double> closestRayRayST(rt::Vec3 p1, rt::Vec3 d1, rt::Vec3 p2, rt::Vec3 d2) {
+		Vec3 r = p1 - p2;
+		double a = glm::dot(d1, d1);
+		double e = glm::dot(d2, d2);
+		double f = glm::dot(d2, r);
+
+		double b = glm::dot(d1, d2);
+		double denom = a*e - b*b;
+
+		double c = glm::dot(d1, r);
+		double s, t;
+		if (glm::epsilon<double>() < denom) {
+			s = (b*f - c*e) / denom;
+		}
+		else {
+			s = 0.0f;
+		}
+		t = (b*s + f) / e;
+		return std::make_tuple(s, t);
+	}
+
 	/*
 	レイとレイの最近傍距離を返す
 	レイは正規化されている必要はない
