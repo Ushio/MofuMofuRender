@@ -11,7 +11,7 @@ namespace rt {
 	レイとレイの最近傍距離を返す
 	レイは正規化されている必要はない
 	*/
-	inline std::tuple<double, double> closestRayRayST(rt::Vec3 p1, rt::Vec3 d1, rt::Vec3 p2, rt::Vec3 d2) {
+	inline std::tuple<double, double> closestRayRayST(const rt::Vec3 &p1, const rt::Vec3 &d1, const rt::Vec3 &p2, const rt::Vec3 &d2) {
 		Vec3 r = p1 - p2;
 		double a = glm::dot(d1, d1);
 		double e = glm::dot(d2, d2);
@@ -35,74 +35,44 @@ namespace rt {
 	/*
 	レイとレイの最近傍距離を返す
 	レイは正規化されている必要はない
+	http://www.math.kit.edu/ianm2/lehre/am22016s/media/distance-harvard.pdf
+	L(t) = q + t * u
+	M(t) = p + t * v
 	*/
-	inline double distanceRayRay(rt::Vec3 p1, rt::Vec3 d1, rt::Vec3 p2, rt::Vec3 d2) {
-		Vec3 r = p1 - p2;
-		double a = glm::dot(d1, d1);
-		double e = glm::dot(d2, d2);
-		double f = glm::dot(d2, r);
-
-		double b = glm::dot(d1, d2);
-		double denom = a*e - b*b; 
-
-		double c = glm::dot(d1, r);
-		double s, t;
-		if (glm::epsilon<double>() < denom) {
-			s = (b*f - c*e) / denom;
+	inline double distanceRayRay(const rt::Vec3 &q, const rt::Vec3 &u, const rt::Vec3 &p, const rt::Vec3 &v) {
+		rt::Vec3 pq = q - p;
+		rt::Vec3 uxv = glm::cross(u, v);
+		double denom = glm::length(uxv);
+		if (denom < glm::epsilon<double>()) {
+			return glm::distance(q, p);
 		}
-		else {
-			s = 0.0f;
-		}
-		t = (b*s + f) / e;
-
-		auto c1 = p1 + d1 * s;
-		auto c2 = p2 + d2 * t;
-		return glm::distance(c1, c2);
+		return glm::length(glm::dot(pq, uxv)) / denom;
 	}
 
 	/*
 	レイとレイの最近傍距離を返す
-	rt::Vec3 p1 = Vec3(0, 0, 0);
-	rt::Vec3 d1 = Vec3(0, 0, 1);
+	rt::Vec3 q = Vec3(0, 0, 0);
+	rt::Vec3 u = Vec3(0, 0, 1);
 	のケース
 	レイは正規化されている必要はない
 	*/
-	inline double distanceRayRay(rt::Vec3 p2, rt::Vec3 d2) {
-		Vec3 r = - p2;
-		double e = glm::dot(d2, d2);
-		double f = glm::dot(d2, r);
-
-		double b = d2.z;
-		double denom = e - b*b;
-
-		double c = r.z;
-		double s, t;
-		if (glm::epsilon<double>() < denom) {
-			s = (b*f - c*e) / denom;
+	inline double distanceRayRay(const rt::Vec3 &p, const rt::Vec3 &v) {
+		rt::Vec3 pq = - p;
+		rt::Vec3 uxv = rt::Vec3(- v.y, v.x, 0.0);
+		double denom = glm::length(uxv);
+		if (denom < glm::epsilon<double>()) {
+			return glm::length(p);
 		}
-		else {
-			s = 0.0f;
-		}
-		t = (b*s + f) / e;
-
-		auto c1 = Vec3(0.0, 0.0, s);
-		auto c2 = p2 + d2 * t;
-		return glm::distance(c1, c2);
+		return glm::length(glm::dot(pq, uxv)) / denom;
 	}
 
-	// 与えられた線分abおよび点cに対して、ab上の最近接点dを計算
-	// d(t) = a + t*(b - a) により表されるdの位置に対するtも返す
-	// ちょっとまだ最適化の余地がある
-	// 
+	// o + t * d, cとの最近傍距離の平方
 	inline double distanceSqPointRay(Vec3 c, Vec3 o, Vec3 d)
 	{
-		// パラメータ化されている位置 d(t) = a + t*(b - a) の計算によりabにcを射影
 		double t = glm::dot(c - o, d) / glm::dot(d, d);
-		// クランプされているtからの射影されている位置を計算
 		Vec3 p = o + t * d;
 		return glm::distance2(p, c);
 	}
-
 
 	struct MoveAndRotate {
 		MoveAndRotate() {}
@@ -322,78 +292,78 @@ namespace rt {
 	}
 	
 	// 通常版
-	//inline bool intersect_bezier(int depth, double radius, double radiusSq, const BezierQuadratic3D &original, const BezierQuadratic3D &c, double v0, double v1, double *tmin, CurveIntersection *intersection)
-	//{
-	//	auto b = c.boundingBox();
-	//	if (b.min_position.z >= *tmin || b.max_position.z <= glm::epsilon<double>()
-	//		|| b.min_position.x >= radius || b.max_position.x <= -radius
-	//		|| b.min_position.y >= radius || b.max_position.y <= -radius) {
-	//		/// the bounding box does not overlap the square
-	//		/// centered at O.
-	//		//ofSetColor(64);
-	//		//drawAABB(b);
-	//		return false;
-	//	} else if (depth == 0) {
-	//		/// the maximum recursion depth is reached.
-	//		auto dir = c[2] - c[0];
+	inline bool intersect_bezier_standard(int depth, double radius, double radiusSq, const BezierQuadratic3D &original, const BezierQuadratic3D &c, double v0, double v1, double *tmin, CurveIntersection *intersection)
+	{
+		auto b = c.boundingBox();
+		if (b.min_position.z >= *tmin || b.max_position.z <= glm::epsilon<double>()
+			|| b.min_position.x >= radius || b.max_position.x <= -radius
+			|| b.min_position.y >= radius || b.max_position.y <= -radius) {
+			/// the bounding box does not overlap the square
+			/// centered at O.
+			//ofSetColor(64);
+			//drawAABB(b);
+			return false;
+		} else if (depth == 0) {
+			/// the maximum recursion depth is reached.
+			auto dir = c[2] - c[0];
 
-	//		// compute w on the line segment.
-	//		double w = dir.x * dir.x + dir.y * dir.y;
-	//		if (std::fabs(w) < 1.0e-12) {
-	//			return false;
-	//		}
-	//		w = -(c[0].x * dir.x + c[0].y * dir.y) / w;
-	//		w = glm::clamp(w, 0.0, 1.0);
+			// compute w on the line segment.
+			double w = dir.x * dir.x + dir.y * dir.y;
+			if (std::fabs(w) < 1.0e-12) {
+				return false;
+			}
+			w = -(c[0].x * dir.x + c[0].y * dir.y) / w;
+			w = glm::clamp(w, 0.0, 1.0);
 
-	//		// compute v on the curve segment.
-	//		// double v = v0 * (1 - w) + v1 * w;
-	//		double v = glm::mix(v0, v1, w);
+			// compute v on the curve segment.
+			// double v = v0 * (1 - w) + v1 * w;
+			double v = glm::mix(v0, v1, w);
 
-	//		// compare x-y distances.
-	//		auto p = original.evaluate(v);
-	//		double distanceSquared = p.x * p.x + p.y * p.y;
-	//		if (distanceSquared >= radiusSq || p.z <= glm::epsilon<double>()) {
-	//			return false;
-	//		}
+			// compare x-y distances.
+			auto p = original.evaluate(v);
+			double distanceSquared = p.x * p.x + p.y * p.y;
+			if (distanceSquared >= radiusSq || p.z <= glm::epsilon<double>()) {
+				return false;
+			}
 
-	//		// compare z distances.
-	//		if (*tmin < p.z) {
-	//			return false;
-	//		}
+			// compare z distances.
+			if (*tmin < p.z) {
+				return false;
+			}
 
-	//		// tminは、コリジョンが成立するセグメント内での"中心"の最小を指す。ベジエの表面ではない
-	//		*tmin = p.z;
+			// tminは、コリジョンが成立するセグメント内での"中心"の最小を指す。ベジエの表面ではない
+			*tmin = p.z;
 
-	//		// intersection->h = glm::sqrt(distanceSquared) / radius;
-	//		intersection->h = distanceRayRay(p, original.tangent(v)) / radius;
-	//		intersection->bezier_t = v;
+			// intersection->h = glm::sqrt(distanceSquared) / radius;
+			intersection->h = distanceRayRay(p, original.tangent(v)) / radius;
+			intersection->bezier_t = v;
 
-	//		Vec2 to_zero(-p.x, -p.y);
-	//		Vec2 rhs_dir(dir.y, -dir.x);
-	//		/*
-	//		どちらを横切るか？
-	//		  lhs
-	//		-(ray)-------->
-	//		  rhs
-	//		*/
-	//		bool isRhs = 0.0 > glm::dot(to_zero, rhs_dir);
-	//		if (isRhs) {
-	//			intersection->h = -intersection->h;
-	//		}
+			Vec2 to_zero(-p.x, -p.y);
+			Vec2 rhs_dir(dir.y, -dir.x);
+			/*
+			どちらを横切るか？
+			  lhs
+			-(ray)-------->
+			  rhs
+			*/
+			bool isRhs = 0.0 > glm::dot(to_zero, rhs_dir);
+			if (isRhs) {
+				intersection->h = -intersection->h;
+			}
 
-	//		return true;
-	//	}
-	//	else {
-	//		//ofSetColor(255);
-	//		//drawAABB(b);
+			return true;
+		}
+		else {
+			//ofSetColor(255);
+			//drawAABB(b);
 
-	//		double vm = (v0 + v1) * 0.5;
-	//		BezierQuadratic3D cl, cr;
-	//		std::tie(cl, cr) = c.split(0.5);
+			double vm = (v0 + v1) * 0.5;
+			BezierQuadratic3D cl, cr;
+			std::tie(cl, cr) = c.split(0.5);
 
-	//		bool intersect_L = intersect_bezier(depth - 1, radius, radiusSq, original, cl, v0, vm, tmin, intersection);
-	//		bool intersect_R = intersect_bezier(depth - 1, radius, radiusSq, original, cr, vm, v1, tmin, intersection);
-	//		return intersect_L || intersect_R;
-	//	}
-	//}
+			bool intersect_L = intersect_bezier(depth - 1, radius, radiusSq, original, cl, v0, vm, tmin, intersection);
+			bool intersect_R = intersect_bezier(depth - 1, radius, radiusSq, original, cr, vm, v1, tmin, intersection);
+			return intersect_L || intersect_R;
+		}
+	}
 }

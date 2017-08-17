@@ -51,6 +51,7 @@ TEST_CASE("Ray Distance", "[Ray Distance]") {
 		rt::Vec3 p2 = ray2.o + ray2.d * t;
 		double closest_distance = glm::distance(p1, p2);
 
+		// 同じ結果になるはずだ
 		REQUIRE(glm::abs(closest_distance - rt::distanceRayRay(ray1.o, ray1.d, ray2.o, ray2.d)) < 0.00001);
 
 		// 最近傍であるなら、ちょっとs, tを動かした距離は、必ず最近傍よりも遠くなるべきだ
@@ -62,6 +63,21 @@ TEST_CASE("Ray Distance", "[Ray Distance]") {
 			
 			REQUIRE(closest_distance < closest_distance_tap);
 		}
+	}
+
+	for (int i = 0; i < 10000; ++i) {
+		rt::Ray ray1(rt::Vec3(), rt::Vec3(0, 0, 1));
+		rt::Ray ray2(r() * 10.0, rt::uniform_on_unit_sphere(&random));
+
+		// 
+		double s, t;
+		std::tie(s, t) = rt::closestRayRayST(ray1.o, ray1.d, ray2.o, ray2.d);
+		rt::Vec3 p1 = ray1.o + ray1.d * s;
+		rt::Vec3 p2 = ray2.o + ray2.d * t;
+		double closest_distance = glm::distance(p1, p2);
+
+		// 同じ結果になるはずだ
+		REQUIRE(glm::abs(closest_distance - rt::distanceRayRay(ray2.o, ray2.d)) < 0.00001);
 	}
 }
 
