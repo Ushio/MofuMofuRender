@@ -388,7 +388,7 @@ void ofApp::setup() {
 			// e.sigma_a = glm::mix(rt::Vec3(0.4, 0.6, 1.5) * 5.0, rt::Vec3(0.45, 0.65, 0.8) * noise * 0.4, hairPattern);
 			// e.sigma_a = glm::mix(rt::Vec3(0.5, 0.7, 0.4) * 7.0, rt::Vec3(0.55, 0.57, 0.5) * noise * 0.4, hairPattern);
 			e.sigma_a = glm::mix(rt::Vec3(0.55, 0.52, 0.45) * 2.0, rt::Vec3(0.55, 0.52, 0.35) * noise * 0.4, hairPattern);
-			e.radius = 0.001;
+			e.radius = 0.002;
 			beziers.push_back(e);
 		}
 		std::shared_ptr<rt::BezierBVHSceneElement> element(new rt::BezierBVHSceneElement(beziers));

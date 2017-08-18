@@ -42,7 +42,32 @@ TEST_CASE("Ray Distance", "[Ray Distance]") {
 
 	for (int i = 0; i < 50000; ++i) {
 		rt::Ray ray1(r() * 10.0, rt::uniform_on_unit_sphere(&random));
+		rt::Vec3 p = r() * 10.0;
+
+		double t = rt::distanceSqPointRayT(p, ray1.o, ray1.d);
+		double distanceSq = rt::distanceSqPointRay(p, ray1.o, ray1.d);
+		REQUIRE(glm::abs(distanceSq - glm::distance2(p, ray1.o + ray1.d * t)) < 0.00001);
+
+		// 最近傍であるなら、ちょっとs, tを動かした距離は、必ず最近傍よりも遠くなるべきだ
+		for (int j = 0; j < 1000; ++j) {
+			double dist = (random.uniform() > 0.5) ? 10.0 : 0.01;
+			rt::Vec3 p1_tap = ray1.o + ray1.d * (t + random.uniform(-1.0, 1.0) * dist);
+			double closest_distanceSq_tap = glm::distance2(p, p1_tap);
+			REQUIRE(distanceSq < closest_distanceSq_tap + 0.00000001);
+		}
+	}
+
+	for (int i = 0; i < 50000; ++i) {
+		rt::Ray ray1(r() * 10.0, rt::uniform_on_unit_sphere(&random));
 		rt::Ray ray2(r() * 10.0, rt::uniform_on_unit_sphere(&random));
+
+		// 向きが同じでもうまく対処できるべきだ
+		if (random.uniform() < 0.01) {
+			ray2.d = ray1.d;
+		}
+		if (random.uniform() < 0.01) {
+			ray1.d = ray2.d;
+		}
 
 		// 
 		double s, t;
@@ -64,7 +89,7 @@ TEST_CASE("Ray Distance", "[Ray Distance]") {
 			rt::Vec3 p2_tap = ray2.o + ray2.d * (t + random.uniform(-1.0, 1.0) * dist);
 			double closest_distance_tap = glm::distance(p1_tap, p2_tap);
 			
-			REQUIRE(closest_distance < closest_distance_tap);
+			REQUIRE(closest_distance < closest_distance_tap + 0.000000001);
 		}
 	}
 

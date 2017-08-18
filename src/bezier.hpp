@@ -7,6 +7,19 @@
 #include <tuple>
 
 namespace rt {
+	// o + t * d, cとの最近傍距離の平方
+	// dは正規化されている必要はない
+	inline double distanceSqPointRayT(Vec3 c, Vec3 o, Vec3 d)
+	{
+		return glm::dot(c - o, d) / glm::dot(d, d);
+	}
+
+	// o + d * t と cの最近傍距離の平方を返す
+	// dは正規化されている必要はない
+	inline double distanceSqPointRay(Vec3 c, Vec3 o, Vec3 d) {
+		return glm::length2(glm::cross(c - o, d)) / glm::length2(d);
+	}
+
 	/*
 	レイとレイの最近傍距離を返す
 	レイは正規化されている必要はない
@@ -22,7 +35,7 @@ namespace rt {
 
 		double c = glm::dot(d1, r);
 		double s, t;
-		if (glm::epsilon<double>() < denom) {
+		if (glm::epsilon<double>() * 100.0 < denom) {
 			s = (b*f - c*e) / denom;
 		}
 		else {
@@ -43,8 +56,8 @@ namespace rt {
 		rt::Vec3 pq = q - p;
 		rt::Vec3 uxv = glm::cross(u, v);
 		double denom = glm::length(uxv);
-		if (denom < glm::epsilon<double>()) {
-			return glm::distance(q, p);
+		if (denom < glm::epsilon<double>() * 100.0) {
+			return glm::sqrt(distanceSqPointRay(q, p, v));
 		}
 		return glm::length(glm::dot(pq, uxv)) / denom;
 	}
@@ -60,8 +73,8 @@ namespace rt {
 		rt::Vec3 pq = q - p;
 		rt::Vec3 uxv = glm::cross(u, v);
 		double denom = glm::length2(uxv);
-		if (denom < glm::epsilon<double>()) {
-			return glm::distance2(q, p);
+		if (denom < glm::epsilon<double>() * 100.0) {
+			return distanceSqPointRay(q, p, v);
 		}
 		return glm::length2(glm::dot(pq, uxv)) / denom;
 	}
@@ -74,22 +87,16 @@ namespace rt {
 	レイは正規化されている必要はない
 	*/
 	inline double distanceRayRay(const rt::Vec3 &p, const rt::Vec3 &v) {
-		rt::Vec3 pq = - p;
-		rt::Vec3 uxv = rt::Vec3(- v.y, v.x, 0.0);
-		double denom = glm::length(uxv);
-		if (denom < glm::epsilon<double>()) {
-			return glm::length(p);
+		rt::Vec3 pq = -p;
+		rt::Vec3 uxv = rt::Vec3(-v.y, v.x, 0.0);
+		double denom2 = uxv.x * uxv.x + uxv.y * uxv.y; // length2
+		if (denom2 < glm::epsilon<double>() * 100.0) {
+			return glm::sqrt(distanceSqPointRay(Vec3(), p, v));
 		}
-		return glm::length(glm::dot(pq, uxv)) / denom;
+		double qp_dot_uxv = pq.x * uxv.x + pq.y * uxv.y;
+		return glm::sqrt(glm::length2(qp_dot_uxv) / denom2);
 	}
 
-	// o + t * d, cとの最近傍距離の平方
-	inline double distanceSqPointRay(Vec3 c, Vec3 o, Vec3 d)
-	{
-		double t = glm::dot(c - o, d) / glm::dot(d, d);
-		Vec3 p = o + t * d;
-		return glm::distance2(p, c);
-	}
 
 	struct MoveAndRotate {
 		MoveAndRotate() {}
@@ -226,7 +233,7 @@ namespace rt {
 		auto radius_f = [](double t) {
 			// https://www.desmos.com/calculator/ttwuz1xm7u
 			constexpr double a = 1.0;
-			constexpr double b = 0.8;
+			constexpr double b = 0.75;
 			constexpr double m = 1.0 / (b - a);
 			return glm::clamp((t - a) * m, 0.0, 1.0);
 		};

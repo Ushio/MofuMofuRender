@@ -376,7 +376,7 @@ namespace rt {
 					continue;
 				}
 
-				const BezierQuadratic3D &bezier = beziers[index].bezier.transform(projection);
+				BezierQuadratic3D bezier = beziers[index].bezier.transform(projection);
 
 				auto radius = beziers[index].radius;
 				rt::CurveIntersection thisIntersection;
