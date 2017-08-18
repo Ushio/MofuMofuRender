@@ -10,16 +10,20 @@ inline ofPixels toOf(const rt::Image &image) {
 	uint8_t *dst = pixels.getPixels();
 
 	double scale = 1.0;
-	for (int y = 0; y < image.height(); ++y) {
-		for (int x = 0; x < image.width(); ++x) {
-			int index = y * image.width() + x;
-			auto px = *image.pixel(x, y);
-			auto L = px.color / (double)px.sample;
-			dst[index * 3 + 0] = (uint8_t)glm::clamp(glm::pow(L.x * scale, 1.0 / 2.2) * 255.0, 0.0, 255.99999);
-			dst[index * 3 + 1] = (uint8_t)glm::clamp(glm::pow(L.y * scale, 1.0 / 2.2) * 255.0, 0.0, 255.99999);
-			dst[index * 3 + 2] = (uint8_t)glm::clamp(glm::pow(L.z * scale, 1.0 / 2.2) * 255.0, 0.0, 255.99999);
+
+	tbb::parallel_for(tbb::blocked_range<int>(0, image.height()), [&](const tbb::blocked_range<int> &range) {
+		for (int y = range.begin(); y < range.end(); ++y) {
+			for (int x = 0; x < image.width(); ++x) {
+				int index = y * image.width() + x;
+				auto px = *image.pixel(x, y);
+				auto L = px.color / (double)px.sample;
+				dst[index * 3 + 0] = (uint8_t)glm::clamp(glm::pow(L.x * scale, 1.0 / 2.2) * 255.0, 0.0, 255.99999);
+				dst[index * 3 + 1] = (uint8_t)glm::clamp(glm::pow(L.y * scale, 1.0 / 2.2) * 255.0, 0.0, 255.99999);
+				dst[index * 3 + 2] = (uint8_t)glm::clamp(glm::pow(L.z * scale, 1.0 / 2.2) * 255.0, 0.0, 255.99999);
+			}
 		}
-	}
+	});
+
 	return pixels;
 }
 
@@ -252,7 +256,8 @@ void ofApp::setup() {
 	static plog::RollingFileAppender<plog::TxtFormatter> fileAppender(ofToDataPath("../../log.txt").c_str());
 	plog::init(plog::debug, &consoleAppender).addAppender(&fileAppender);
 
-	LOG_DEBUG << "render begin...";
+	LOG_DEBUG << "render begin";
+	LOG_DEBUG << IMAGE_WIDTH << " x " << IMAGE_HEIGHT;
 
 #if NO_WINDOW == 0
 	_imgui.setup();
@@ -422,29 +427,32 @@ void ofApp::update(){
 
 	LOG_DEBUG << "step: " << sw.elapsed();
 	
+	auto save = [&]() {
+		static int index = 0;
+
+		auto image = toOf(_pt->_image);
+		char name[256];
+		sprintf(name, "../../output_images/%03d_(%d spp).png", index++, _pt->spp());
+		ofSaveImage(image, name);
+
+		char buffer[256];
+		sprintf(buffer, "saved %03d.png, %.1fs", index - 1, _wholeSW->elapsed());
+		LOG_DEBUG << buffer;
+	};
+
 #if NO_WINDOW == 0
-	//if (ofGetFrameNum() % 30 == 0) {
-	//	_image.setFromPixels(toOf(_pt->_image));
-	//}
 	_image.setFromPixels(toOf(_pt->_image));
 #else
 	if (_sw->elapsed() > 29.0) {
-		static int index = 0;
-
 		_sw = std::shared_ptr<rt::Stopwatch>(new rt::Stopwatch());
-
-		// output
-		auto image = toOf(_pt->_image);
-		char name[256];
-		sprintf(name, "../../output_images/%03d.png", index++);
-		ofSaveImage(image, name);
-
-		printf("saved %03d.png, %.1fs\n", index - 1, _wholeSW->elapsed());
+		save();
 	}
 #endif
 
 #if AUTO_QUIT
-	if (_wholeSW->elapsed() + _stepStats.avarage() > 60.0 * 4.0 + 33.0) {
+	// 念のため 2秒のバッファを持つ
+	if (_wholeSW->elapsed() + _stepStats.avarage() > 60.0 * 4.0 + 31.0) {
+		save();
 		std::exit(0);
 	}
 #endif

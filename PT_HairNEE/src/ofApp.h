@@ -14,14 +14,26 @@
 #include "transform.hpp"
 #include "objload.hpp"
 
+// デプロイモードか？
+#define DEPLOY_MODE 1
+
+
+#if DEPLOY_MODE
+#define NO_WINDOW 1
+#define ENABLE_FUR 1
+#define AUTO_QUIT 1
+
+static const int IMAGE_WIDTH = 800;
+static const int IMAGE_HEIGHT = 600;
+#else
 #define NO_WINDOW 0
 #define ENABLE_FUR 1
 #define AUTO_QUIT 0
 
 static const int IMAGE_WIDTH = 320;
 static const int IMAGE_HEIGHT = 240;
-//static const int IMAGE_WIDTH = 320 * 2;
-//static const int IMAGE_HEIGHT = 240 * 2;
+#endif
+
 class ofApp : public ofBaseApp{
 public:
 	void setup();

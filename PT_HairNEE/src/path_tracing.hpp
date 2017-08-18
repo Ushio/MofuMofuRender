@@ -323,9 +323,14 @@ namespace rt {
 		}
 		void step() {
 			step_image(_scene, _image, _ibl);
+			_spp++;
+		}
+		int spp() const {
+			return _spp;
 		}
 		std::shared_ptr<rt::Scene> _scene;
 		Image _image;
 		IBL _ibl;
+		int _spp = 0;
 	};
 }
