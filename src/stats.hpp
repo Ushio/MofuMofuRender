@@ -47,6 +47,24 @@ namespace rt {
 		double _mean = 0.0;
 	};
 
+	template <class T>
+	class OnlineMeanT {
+	public:
+		void addSample(T x) {
+			_mean = (x - _mean) / T(_n + 1.0) + _mean;
+			_n++;
+		}
+		T mean() const {
+			return _mean;
+		}
+		int sampleCount() const {
+			return _n;
+		}
+	private:
+		int _n = 0;
+		T _mean = T(0.0);
+	};
+
 	/*
 	https://qpp.bitbucket.io/post/streaming_algorithm/
 	*/

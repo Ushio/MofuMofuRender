@@ -5,6 +5,28 @@ inline ofVec3f toOf(rt::Vec3 v) {
 	return ofVec3f(v.x, v.y, v.z);
 }
 
+inline void drawAABB(rt::AABB aabb) {
+	auto sR = aabb.size();
+	auto cR = aabb.center();
+	ofNoFill();
+	ofDrawBox(cR.x, cR.y, cR.z, sR.x, sR.y, sR.z);
+	ofFill();
+}
+inline void drawOBB(rt::OBB obb) {
+	ofNoFill();
+	ofPushMatrix();
+
+	ofTranslate(obb.ac.x, obb.ac.y, obb.ac.z);
+	rt::Mat3 m(obb.a[0], obb.a[1], obb.a[2]);
+	ofMatrix4x4 ofm;
+	ofm.set(glm::value_ptr(rt::Mat4(m)));
+	ofMultMatrix(ofm);
+	auto size = obb.h * 2.0;
+	ofDrawBox(0.0f, 0.0f, 0.0f, size.x, size.y, size.z);
+
+	ofPopMatrix();
+	ofFill();
+}
 //--------------------------------------------------------------
 void ofApp::setup() {
 	_imgui.setup();
@@ -114,20 +136,6 @@ void ofApp::draw(){
 	//	ofDrawLine(toOf(p0), toOf(p1));
 	//});
 	auto drawBezier = [=](rt::BezierQuadratic3D bz) {
-		//{
-		//	ofSetColor(ofColor::white);
-		//	ofDrawSphere(bz[0].x, bz[0].y, bz[0].z, 0.02f);
-
-		//	ofSetColor(ofColor::red);
-		//	ofDrawSphere(bz[2].x, bz[2].y, bz[2].z, 0.02f);
-
-		//	ofSetColor(ofColor::orange);
-		//	ofDrawSphere(bz[1].x, bz[1].y, bz[1].z, 0.01f);
-		//	ofLine(bz[1].x, bz[1].y, bz[1].z, bz[0].x, bz[0].y, bz[0].z);
-		//	ofLine(bz[1].x, bz[1].y, bz[1].z, bz[2].x, bz[2].y, bz[2].z);
-		//}
-		//ofSetColor(ofColor::orange);
-
 		ofNoFill();
 		ofSetColor(ofColor::orange);
 		ofPolyline line;
@@ -140,13 +148,6 @@ void ofApp::draw(){
 
 			auto tangent = glm::normalize(bz.tangent(t));
 			auto from_bxdf = rt::from_bxdf_basis_transform(tangent);
-			/*
-			ofPushMatrix();
-			ofTranslate(p.x, p.y, p.z);
-			ofMultMatrix(glm::value_ptr(glm::mat4(from_bxdf)));
-			ofDrawCircle(0, 0, radius);
-			ofPopMatrix();
-			*/
 		}
 
 		line.draw();
@@ -157,6 +158,84 @@ void ofApp::draw(){
 	for (int i = 0; i < _leafs[_index].beizers.size(); ++i) {
 		auto bezier = _leafs[_index].beizers[i];
 		drawBezier(bezier.bezier);
+	}
+
+	// 
+	{
+		rt::OnlineCovarianceMatrix3x3 onlineCovMat3;
+		rt::OnlineMeanT<rt::Vec3> center;
+		for (int i = 0; i < _leafs[_index].beizers.size(); ++i) {
+			auto bezier = _leafs[_index].beizers[i];
+
+			int N = 10;
+			for (int j = 0; j < N; ++j) {
+				float t = (float)j / (N - 1);
+				auto p = bezier.bezier.evaluate(t);
+				onlineCovMat3.addSample(p);
+				center.addSample(p);
+			}
+		}
+
+		auto m = onlineCovMat3.sampleCovarianceMatrix();
+		rt::Vec3 xaxis, yaxis, zaxis;
+		std::tie(xaxis, yaxis, zaxis) = rt::PCA(m);
+
+		ofSetColor(255, 0, 0);
+		ofDrawLine(toOf(center.mean()), toOf(center.mean() + xaxis));
+		ofSetColor(0, 0, 255);
+		ofDrawLine(toOf(center.mean()), toOf(center.mean() + yaxis));
+		ofSetColor(0, 255, 0);
+		ofDrawLine(toOf(center.mean()), toOf(center.mean() + zaxis));
+
+		rt::OnlineAABB onlineAABB;
+		rt::OnlineOBB onlineOBB({ xaxis, yaxis, zaxis });
+
+		for (int i = 0; i < _leafs[_index].beizers.size(); ++i) {
+			auto bezier = _leafs[_index].beizers[i];
+
+			int N = 100;
+			for (int j = 0; j < N; ++j) {
+				float t = (float)j / (N - 1);
+				auto p = bezier.bezier.evaluate(t);
+				onlineOBB.addSample(p);
+				onlineAABB.addSample(p);
+			}
+		}
+		rt::AABB aabb = onlineAABB.aabb();
+		rt::OBB obb = onlineOBB.obb();
+
+		//rt::OBB obb;
+		//obb.ac = rt::Vec3();
+		//obb.a = { xaxis , yaxis , zaxis };
+		//obb.h = {0.5, 1.0, 1.5};
+
+		ofSetColor(ofColor::orange);
+		drawOBB(obb);
+
+
+		ofSetColor(ofColor::red);
+		drawAABB(aabb);
+
+		// rt::AABB aabb(rt::Vec3(-1.0), rt::Vec3(1.0));
+
+		int NRay = 300;
+		for (int i = 0; i < NRay; ++i) {
+			double s = (double)i / NRay;
+			auto o = rt::Vec3(glm::mix(-2.0, 2.0, s), _ray_y, _ray_z);
+			auto d = rt::Vec3(0.0, 0.0, -1.0);
+
+			// auto tmin = rt::intersect_obb(rt::Ray(o, d), obb)
+			// auto tmin = rt::intersect_aabb(rt::Ray(o, d), rt::Vec3(1.0) / d, aabb)
+			if (auto tmin = rt::intersect_obb(rt::Ray(o, d), obb)) {
+				ofDrawSphere(toOf(o), 0.01f);
+				ofDrawLine(toOf(o), toOf(o + d * (*tmin)));
+			}
+			else {
+				ofSetColor(ofColor::orange);
+				ofDrawSphere(toOf(o), 0.01f);
+				ofDrawLine(toOf(o), toOf(o + d * 5.0));
+			}
+		}
 	}
 
 	_camera.end();
@@ -171,6 +250,9 @@ void ofApp::draw(){
 	ImGui::Text("fps: %.2f", ofGetFrameRate());
 
 	ImGui::SliderInt("index", &_index, 0, _leafs.size() - 1);
+
+	ImGui::InputFloat("ray y", &_ray_y);
+	ImGui::InputFloat("ray z", &_ray_z);
 
 	auto wp = ImGui::GetWindowPos();
 	auto ws = ImGui::GetWindowSize();

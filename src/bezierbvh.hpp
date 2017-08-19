@@ -15,86 +15,6 @@
 namespace rt {
 	// static double kBVH_SAH_POWER = 3.0;
 	static double kBVH_SAH_POWER = 30.0;
-	//struct AABBx4 {
-	//	AABBx4() {}
-	//	AABBx4(const AABB *aabbs) {
-	//		for (int i = 0; i < 4; ++i) {
-	//			min_position_x[i] = aabbs[i].min_position[0];
-	//			min_position_y[i] = aabbs[i].min_position[1];
-	//			min_position_z[i] = aabbs[i].min_position[2];
-	//			max_position_x[i] = aabbs[i].max_position[0];
-	//			max_position_y[i] = aabbs[i].max_position[1];
-	//			max_position_z[i] = aabbs[i].max_position[2];
-
-	//			_aabbs[i] = aabbs[i];
-	//		}
-	//	}
-	//	alignas(alignof(__m128)) float min_position_x[4];
-	//	alignas(alignof(__m128)) float min_position_y[4];
-	//	alignas(alignof(__m128)) float min_position_z[4];
-	//	alignas(alignof(__m128)) float max_position_x[4];
-	//	alignas(alignof(__m128)) float max_position_y[4];
-	//	alignas(alignof(__m128)) float max_position_z[4];
-
-	//	AABB _aabbs[4];
-	//};
-
-	//struct AABBIntersection_x4 {
-	//	std::experimental::optional<float> tmins[4];
-	//};
-
-	//inline AABBIntersection_x4 intersect_aabb_4x_simd(const Ray &ray, const rt::Vec3 &inv_d, const AABBx4& aabb) {
-	//	__m128 inv_d_x = _mm_set1_ps(inv_d.x);
-	//	__m128 inv_d_y = _mm_set1_ps(inv_d.y);
-	//	__m128 inv_d_z = _mm_set1_ps(inv_d.z);
-	//	__m128 ray_o_x = _mm_set1_ps(ray.o.x);
-	//	__m128 ray_o_y = _mm_set1_ps(ray.o.y);
-	//	__m128 ray_o_z = _mm_set1_ps(ray.o.z);
-
-	//	__m128 tx1 = _mm_mul_ps(_mm_sub_ps(*(__m128 *)aabb.min_position_x, ray_o_x), inv_d_x);
-	//	__m128 tx2 = _mm_mul_ps(_mm_sub_ps(*(__m128 *)aabb.max_position_x, ray_o_x), inv_d_x);
-	//	__m128 tmin = _mm_min_ps(tx1, tx2);
-	//	__m128 tmax = _mm_max_ps(tx1, tx2);
-
-	//	__m128 ty1 = _mm_mul_ps(_mm_sub_ps(*(__m128 *)aabb.min_position_y, ray_o_y), inv_d_y);
-	//	__m128 ty2 = _mm_mul_ps(_mm_sub_ps(*(__m128 *)aabb.max_position_y, ray_o_y), inv_d_y);
-	//	tmin = _mm_max_ps(tmin, _mm_min_ps(ty1, ty2));
-	//	tmax = _mm_min_ps(tmax, _mm_max_ps(ty1, ty2));
-
-	//	__m128 tz1 = _mm_mul_ps(_mm_sub_ps(*(__m128 *)aabb.min_position_z, ray_o_z), inv_d_z);
-	//	__m128 tz2 = _mm_mul_ps(_mm_sub_ps(*(__m128 *)aabb.max_position_z, ray_o_z), inv_d_z);
-	//	tmin = _mm_max_ps(tmin, _mm_min_ps(tz1, tz2));
-	//	tmax = _mm_min_ps(tmax, _mm_max_ps(tz1, tz2));
-
-	//	/*
-	//	bool intersect = tmin <= tmax && 0.0 < tmax;
-	//	if (intersect) {
-	//		*tmin_ptr = tmin < 0.0 ? tmax : tmin;
-	//	}
-	//	*/
-	//	__m128 a = _mm_cmp_ps(tmin, tmax, _CMP_LE_OQ);
-	//	__m128 b = _mm_cmp_ps(_mm_setzero_ps(), tmax, _CMP_LE_OQ);
-	//	__m128 r = _mm_and_ps(a, b);
-	//	__m128 tmin_final = _mm_blendv_ps(tmin, tmax, _mm_cmp_ps(tmin, _mm_setzero_ps(), _CMP_LE_OQ));
-
-	//	AABBIntersection_x4 intersections;
-	//	for (int i = 0; i < 4; ++i) {
-	//		if (((uint32_t *)&r)[i]) {
-	//			intersections.tmins[i] = ((float *)&tmin_final)[i];
-	//		}
-	//	}
-	//	return intersections;
-	//}
-	//
-	//inline AABBIntersection_x4 intersect_aabb_x4(const Ray &ray, const rt::Vec3 &inv_d, const AABB *aabb) {
-	//	AABBIntersection_x4 r;
-	//	for (int i = 0; i < 4; ++i) {
-	//		if (auto tmin = intersect_aabb(ray, inv_d, aabb[i])) {
-	//			r.tmins[i] = *tmin;
-	//		}
-	//	}
-	//	return r;
-	//}
 
 	struct BezierEntity {
 		double radius = 0.0;
@@ -111,7 +31,7 @@ namespace rt {
 	};
 
 	struct BVHBranch;
-
+	
 	using BVHNode = mapbox::util::variant<BVHLeaf, std::unique_ptr<BVHBranch>>;
 
 	struct BVHBranch {
@@ -120,61 +40,6 @@ namespace rt {
 		BVHNode lhs;
 		BVHNode rhs;
 	};
-
-	/*
-	QBVH 木構造
-	QBVHNode = BVHLeaf | QBVHBranchx2 | QBVHBranchx4
-	*/
-	//struct QBVHBranchx2;
-	//struct QBVHBranchx4;
-	//using QBVHNode = mapbox::util::variant<BVHLeaf, std::unique_ptr<QBVHBranchx2>, std::unique_ptr<QBVHBranchx4>>;
-	//struct QBVHBranchx2 {
-	//	AABBx4 aabb_x4;
-	//	QBVHNode nodes[2];
-	//};
-	//struct QBVHBranchx4 {
-	//	AABBx4 aabb_x4;
-	//	QBVHNode nodes[4];
-	//};
-
-	//inline QBVHNode to_qbvh(const BVHNode &bvhNode) {
-	//	if (bvhNode.is<BVHLeaf>()) {
-	//		return bvhNode.get<BVHLeaf>();
-	//	}
-	//	const std::unique_ptr<BVHBranch> &branch = bvhNode.get<std::unique_ptr<BVHBranch>>();
-	//	bool isLBranch = branch->lhs.is<std::unique_ptr<BVHBranch>>();
-	//	bool isRBranch = branch->rhs.is<std::unique_ptr<BVHBranch>>();
-	//	if (isLBranch && isRBranch) {
-	//		const std::unique_ptr<BVHBranch> &branchL = branch->lhs.get<std::unique_ptr<BVHBranch>>();
-	//		const std::unique_ptr<BVHBranch> &branchR = branch->rhs.get<std::unique_ptr<BVHBranch>>();
-
-	//		AABB aabbs[4] = {
-	//			branchL->aabb_L,
-	//			branchL->aabb_R,
-	//			branchR->aabb_L,
-	//			branchR->aabb_R,
-	//		};
-	//		std::unique_ptr<QBVHBranchx4> qBranch(new QBVHBranchx4());
-	//		qBranch->aabb_x4 = AABBx4(aabbs);
-	//		qBranch->nodes[0] = to_qbvh(branchL->lhs);
-	//		qBranch->nodes[1] = to_qbvh(branchL->rhs);
-	//		qBranch->nodes[2] = to_qbvh(branchR->lhs);
-	//		qBranch->nodes[3] = to_qbvh(branchR->rhs);
-	//		return qBranch;
-	//	}
-	//	std::unique_ptr<QBVHBranchx2> branch_x2(new QBVHBranchx2());
-	//	AABB aabbs[4] = {
-	//		branch->aabb_L,
-	//		branch->aabb_R,
-	//		branch->aabb_L,
-	//		branch->aabb_R,
-	//	};
-	//	branch_x2->aabb_x4 = AABBx4(aabbs);
-	//	branch_x2->nodes[0] = to_qbvh(branch->lhs);
-	//	branch_x2->nodes[1] = to_qbvh(branch->rhs);
-	//	return branch_x2;
-	//}
-
 
 	static const double kCOST_INTERSECT_AABB = 1.0;
 	static const double kCOST_INTERSECT_TRIANGLE = 2.0;
@@ -410,6 +275,8 @@ namespace rt {
 			}
 		}
 		else {
+			// TODO 
+			// tminを使ってもう少し間引ける
 			const std::unique_ptr<BVHBranch> &branch = node.get<std::unique_ptr<BVHBranch>>();
 			if (auto aabb_tmin = intersect_aabb(ray, inv_d, branch->aabb_L)) {
 				if (intersect_bvh(ray, inv_d, projection, branch->lhs, beziers, maxDistanceSqsFromSegment, intersection, tmin)) {

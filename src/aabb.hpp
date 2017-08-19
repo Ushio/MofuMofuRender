@@ -85,6 +85,18 @@ namespace rt {
 		return std::experimental::optional<double>();
 	}
 
+	class OnlineAABB {
+	public:
+		void addSample(const Vec3 &p) {
+			_aabb.expand(p);
+		}
+		AABB aabb() const {
+			return _aabb;
+		}
+	private:
+		AABB _aabb;
+	};
+
 	struct AABB2d {
 		Vec2 min_position = Vec2(std::numeric_limits<double>::max());
 		Vec2 max_position = Vec2(-std::numeric_limits<double>::max());
