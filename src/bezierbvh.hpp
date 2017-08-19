@@ -45,7 +45,7 @@ namespace rt {
 	};
 
 	static const double kCOST_INTERSECT_AABB = 1.0;
-	static const double kCOST_INTERSECT_TRIANGLE = 4.0;
+	static const double kCOST_INTERSECT_BEZIER = 4.0;
 
 	// 正規化し、連続化されたコクの有る乱数
 	inline double koku(double nf, PeseudoRandom *random) {
@@ -95,21 +95,21 @@ namespace rt {
 		struct SahContext {
 			AABB aabb_L;
 			AABB aabb_R;
-			std::vector<int> triangles_L;
-			std::vector<int> triangles_R;
+			std::vector<int> beziers_L;
+			std::vector<int> beziers_R;
 
 			void clear() {
 				aabb_L = AABB();
 				aabb_R = AABB();
-				triangles_L.clear();
-				triangles_R.clear();
+				beziers_L.clear();
+				beziers_R.clear();
 			}
 
 			// 分割した場合のコスト期待値
 			double cost(double parentArea) const {
 				return 2.0 * kCOST_INTERSECT_AABB
-					+ (aabb_L.surface_area() / parentArea) * triangles_L.size() * kCOST_INTERSECT_TRIANGLE +
-					+(aabb_R.surface_area() / parentArea) * triangles_R.size() * kCOST_INTERSECT_TRIANGLE;
+					+ (aabb_L.surface_area() / parentArea) * beziers_L.size() * kCOST_INTERSECT_BEZIER +
+					+(aabb_R.surface_area() / parentArea) * beziers_R.size() * kCOST_INTERSECT_BEZIER;
 			}
 		};
 		double parentArea = aabb.surface_area();
@@ -145,7 +145,7 @@ namespace rt {
 				};
 
 				if (std::any_of(values.begin(), values.end(), [border, radius](double value) { return value - radius <= border; })) {
-					sah_new_context.triangles_L.push_back(bezierIndex);
+					sah_new_context.beziers_L.push_back(bezierIndex);
 
 					auto bezierEntity = beziers[bezierIndices[i]];
 					auto bbox = bezierEntity.bezier.boundingBoxConvexhull();
@@ -153,7 +153,7 @@ namespace rt {
 					sah_new_context.aabb_L.expand(bbox);
 				}
 				if (std::any_of(values.begin(), values.end(), [border, radius](double value) { return border < value + radius; })) {
-					sah_new_context.triangles_R.push_back(bezierIndex);
+					sah_new_context.beziers_R.push_back(bezierIndex);
 
 					auto bezierEntity = beziers[bezierIndices[i]];
 					auto bbox = bezierEntity.bezier.boundingBoxConvexhull();
@@ -170,7 +170,7 @@ namespace rt {
 		}
 
 		// 分割しなかった場合のコスト
-		double no_sep_cost = bezierIndices.size() * kCOST_INTERSECT_TRIANGLE;
+		double no_sep_cost = bezierIndices.size() * kCOST_INTERSECT_BEZIER;
 
 		if (no_sep_cost < sep_cost) {
 			BVHLeaf leaf;
@@ -179,8 +179,8 @@ namespace rt {
 			return leaf;
 		}
 
-		if (sah_context.triangles_L.size() == bezierIndices.size() ||
-			sah_context.triangles_R.size() == bezierIndices.size()) {
+		if (sah_context.beziers_L.size() == bezierIndices.size() ||
+			sah_context.beziers_R.size() == bezierIndices.size()) {
 			printf("warning! \n");
 			BVHLeaf leaf;
 			leaf.bezierIndices = bezierIndices;
@@ -188,13 +188,13 @@ namespace rt {
 			return leaf;
 		}
 
-		// printf("depth [%d], sep %d => (%d, %d) \n", depth, (int)bezierIndices.size(), (int)sah_context.triangles_L.size(), (int)sah_context.triangles_R.size());
+		// printf("depth [%d], sep %d => (%d, %d) \n", depth, (int)bezierIndices.size(), (int)sah_context.beziers_L.size(), (int)sah_context.beziers_R.size());
 
 		std::unique_ptr<BVHBranch> branch(new BVHBranch());
 		branch->aabb_L = sah_context.aabb_L;
 		branch->aabb_R = sah_context.aabb_R;
-		//branch->lhs = build_tree(sah_context.triangles_L, vertices, random);
-		//branch->rhs = build_tree(sah_context.triangles_R, vertices, random);
+		//branch->lhs = build_tree(sah_context.beziers_L, vertices, random);
+		//branch->rhs = build_tree(sah_context.beziers_R, vertices, random);
 
 		if (depth < 5) {
 			tbb::task_group g;
@@ -203,17 +203,17 @@ namespace rt {
 			
 			g.run([&branch, &sah_context, beziers, LSeed, depth]() {
 				Xor childRandomL(LSeed);
-				branch->lhs = build_tree(sah_context.triangles_L, beziers, &childRandomL, depth + 1);
+				branch->lhs = build_tree(sah_context.beziers_L, beziers, &childRandomL, depth + 1);
 			});
 			g.run([&branch, &sah_context, beziers, RSeed, depth]() {
 				Xor childRandomR(RSeed);
-				branch->rhs = build_tree(sah_context.triangles_R, beziers, &childRandomR, depth + 1);
+				branch->rhs = build_tree(sah_context.beziers_R, beziers, &childRandomR, depth + 1);
 			});
 			g.wait();
 		}
 		else {
-			branch->lhs = build_tree(sah_context.triangles_L, beziers, random, depth + 1);
-			branch->rhs = build_tree(sah_context.triangles_R, beziers, random, depth + 1);
+			branch->lhs = build_tree(sah_context.beziers_L, beziers, random, depth + 1);
+			branch->rhs = build_tree(sah_context.beziers_R, beziers, random, depth + 1);
 		}
 
 		return branch;
