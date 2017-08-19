@@ -451,7 +451,7 @@ void ofApp::update(){
 
 #if AUTO_QUIT
 	// 念のため 2秒のバッファを持つ
-	if (_wholeSW->elapsed() + _stepStats.avarage() > 60.0 * 4.0 + 31.0) {
+	if (_wholeSW->elapsed() + _stepStats.mean() > 60.0 * 4.0 + 31.0) {
 		save();
 		std::exit(0);
 	}

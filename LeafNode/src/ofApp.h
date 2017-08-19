@@ -3,18 +3,20 @@
 #include "ofMain.h"
 #include "ofxImGui.h"
 
-#include <plog/Log.h>
-#include <plog/Appenders/ColorConsoleAppender.h>
-
 #include "scene.hpp"
 #include "conelbox.hpp"
-#include "path_tracing.hpp"
 #include "stopwatch.hpp"
-#include "stats.hpp"
+#include "bezier.hpp"
 
-#define NO_WINDOW 0
+struct BeizerFur {
+	double radius = 0.0;
+	rt::BezierQuadratic3D bezier;
+};
+struct BezierLeaf {
+	std::vector<BeizerFur> beizers;
+};
 
-class ofApp : public ofBaseApp{
+class ofApp : public ofBaseApp {
 public:
 	void setup();
 	void update();
@@ -35,11 +37,11 @@ public:
 	ofEasyCam _camera;
 	ofxImGui::Gui _imgui;
 	ofImage _image;
-	ofFloatImage _radianceImage;
 
 	std::shared_ptr<rt::Scene> _scene;
-	std::shared_ptr<rt::PathTracer> _pt;
-	std::shared_ptr<rt::Stopwatch> _sw;
+	rt::BezierQuadratic3D _bezierQuadratic;
 
-	std::shared_ptr<rt::Stopwatch> _wholeSW;
+	
+	int _index = 0;
+	std::vector<BezierLeaf> _leafs;
 };

@@ -98,8 +98,6 @@ void ofApp::setup() {
 void ofApp::update(){
 	rt::Stopwatch sw;
 	_pt->step();
-	_stepStats.addSample(sw.elapsed());
-
 	LOG_DEBUG << "step: " << sw.elapsed();
 	
 #if NO_WINDOW == 0
@@ -120,10 +118,6 @@ void ofApp::update(){
 		ofSaveImage(image, name);
 
 		printf("saved %03d.png, %.1fs\n", index - 1, _wholeSW->elapsed());
-	}
-
-	if (_wholeSW->elapsed() + _stepStats.avarage() > 60.0 * 4.0 + 33.0) {
-		std::exit(0);
 	}
 #endif
 }

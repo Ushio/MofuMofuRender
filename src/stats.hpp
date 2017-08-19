@@ -27,6 +27,42 @@ namespace rt {
 		double _c = 0.0;
 	};
 
+	class OnlineMean {
+	public:
+		void addSample(double x) {
+			_mean = (x - _mean) / double(_n + 1.0) + _mean;
+			_n++;
+		}
+		double mean() const {
+			return _mean;
+		}
+		int sampleCount() const {
+			return _n;
+		}
+	private:
+		int _n = 0;
+		double _mean = 0.0;
+	};
+
+	class OnlineVariance {
+	public:
+		void addSample(double x) {
+			double mu_pre = _mean.mean();
+			_mean.addSample(x);
+			double mu_new = _mean.mean();
+			_m += (x - mu_pre) * (x - mu_new);
+		}
+		double sampleVariance() const {
+			return _mean.sampleCount() == 0 ? 0.0 : _m / _mean.sampleCount();
+		}
+		double unbiasedVariance() const {
+			return _mean.sampleCount() == 0 ? 0.0 : _m / (_mean.sampleCount() + 1.0);
+		}
+	private:
+		OnlineMean _mean;
+		double _m = 0.0;
+	};
+
 	// https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Online_algorithm
 	class IncrementalStatatics {
 	public:

@@ -12,6 +12,7 @@
 #include "scene.hpp"
 #include "peseudo_random.hpp"
 #include "misc.hpp"
+#include "stats.hpp"
 
 int main(int argc, char* const argv[])
 {
@@ -19,7 +20,7 @@ int main(int argc, char* const argv[])
 	// テストを指定する場合
 	char* const custom_argv[] = {
 		"",
-		"[Ray Distance]"
+		"[Stats]"
 	};
 	Catch::Session().run(sizeof(custom_argv) / sizeof(custom_argv[0]), custom_argv);
 #else
@@ -33,6 +34,54 @@ int main(int argc, char* const argv[])
 	std::cin.get();
 	return 0;
 }
+
+TEST_CASE("Stats", "[Stats]") {
+	rt::Xor random;
+
+	{
+		for (int j = 0; j < 10000; ++j) {
+			rt::OnlineMean mean;
+			double sum = 0.0;
+			int NSample = 10;
+			for (int i = 0; i < NSample; ++i) {
+				double x = random.uniform(-1, 1);
+				sum += x;
+				mean.addSample(x);
+			}
+			REQUIRE(glm::abs(sum / NSample - mean.mean()) < 0.000001);
+		}
+	}
+
+	{
+		for (int j = 0; j < 10000; ++j) {
+			std::vector<double> samples;
+			for (int i = 0; i < 10; ++i) {
+				double x = random.uniform(-1, 1);
+				samples.push_back(x);
+			}
+
+			rt::OnlineMean mean;
+			for (int i = 0; i < samples.size(); ++i) {
+				mean.addSample(samples[i]);
+			}
+
+			rt::OnlineVariance onlineVariance;
+			double M = 0.0;
+			for (int i = 0; i < samples.size(); ++i) {
+				double x = samples[i];
+				M += (mean.mean() - x) * (mean.mean() - x);
+				onlineVariance.addSample(x);
+			}
+
+			double sampleVariance = M / samples.size();
+			double unbiasedVariance = M / (samples.size() + 1);
+
+			REQUIRE(glm::abs(sampleVariance - onlineVariance.sampleVariance()) < 0.000001);
+			REQUIRE(glm::abs(unbiasedVariance - onlineVariance.unbiasedVariance()) < 0.000001);
+		}
+	}
+}
+
 
 TEST_CASE("Ray Distance", "[Ray Distance]") {
 	rt::Xor random;

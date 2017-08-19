@@ -63,5 +63,5 @@ public:
 
 	std::shared_ptr<rt::Stopwatch> _wholeSW;
 
-	rt::IncrementalStatatics _stepStats;
+	rt::OnlineMean _stepStats;
 };

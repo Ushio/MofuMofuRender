@@ -530,6 +530,7 @@ namespace rt {
 	public:
 		BezierBVHSceneElement(std::vector<BezierEntity> beziers)
 			:_beziers(beziers) {
+			
 			_bvh = std::shared_ptr<BezierBVH>(new BezierBVH(beziers));
 		}
 

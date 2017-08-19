@@ -195,11 +195,23 @@ namespace rt {
 		return s / std::sqrt(sigma2);
 	}
 
-	inline BVHNode build_tree(const std::vector<int> &bezierIndices, const BezierEntity *beziers, PeseudoRandom *random, int depth = 0) {
+	inline BVHNode build_tree(const std::vector<int> &bezierIndices, const BezierEntity *beziers, PeseudoRandom *random, int depth) {
+		//auto write_leaf = [&](std::vector<int> indices) {
+		//	fprintf(fp, "leaf\n");
+		//	for (int index : indices) {
+		//		const auto &bezier = beziers[index];
+		//		fprintf(fp, "%.10f/%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f\n", bezier.radius,
+		//			bezier.bezier[0].x, bezier.bezier[0].y, bezier.bezier[0].z,
+		//			bezier.bezier[1].x, bezier.bezier[1].y, bezier.bezier[1].z,
+		//			bezier.bezier[2].x, bezier.bezier[2].y, bezier.bezier[2].z);
+		//	}
+		//};
+		
 		int maxTriangles = 1;
 		if (bezierIndices.size() <= maxTriangles) {
 			BVHLeaf leaf;
 			leaf.bezierIndices = bezierIndices;
+			// write_leaf(bezierIndices);
 			return leaf;
 		}
 
@@ -310,6 +322,7 @@ namespace rt {
 		if (no_sep_cost < sep_cost) {
 			BVHLeaf leaf;
 			leaf.bezierIndices = bezierIndices;
+			// write_leaf(bezierIndices);
 			return leaf;
 		}
 
@@ -318,6 +331,7 @@ namespace rt {
 			printf("warning! \n");
 			BVHLeaf leaf;
 			leaf.bezierIndices = bezierIndices;
+			// write_leaf(bezierIndices);
 			return leaf;
 		}
 
@@ -345,8 +359,8 @@ namespace rt {
 			g.wait();
 		}
 		else {
-			branch->lhs = build_tree(sah_context.triangles_L, beziers, random);
-			branch->rhs = build_tree(sah_context.triangles_R, beziers, random);
+			branch->lhs = build_tree(sah_context.triangles_L, beziers, random, depth + 1);
+			branch->rhs = build_tree(sah_context.triangles_R, beziers, random, depth + 1);
 		}
 
 		return branch;
@@ -476,14 +490,12 @@ namespace rt {
 	class BezierBVH {
 	public:
 		BezierBVH(const std::vector<BezierEntity> &beziers):_beziers(beziers) {
-
-
-
 			std::vector<int> bezierIndices;
 			for (int i = 0; i < _beziers.size(); ++i) {
 				bezierIndices.push_back(i);
 			}
-			_node = build_tree(bezierIndices, _beziers.data(), &_random);
+			_node = build_tree(bezierIndices, _beziers.data(), &_random, 0);
+
 			// _qnode = to_qbvh(_node);
 			// _flatten = flatten_bvh(_node);
 
