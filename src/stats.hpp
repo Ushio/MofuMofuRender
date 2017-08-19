@@ -27,6 +27,9 @@ namespace rt {
 		double _c = 0.0;
 	};
 
+	/*
+	https://qpp.bitbucket.io/post/streaming_algorithm/
+	*/
 	class OnlineMean {
 	public:
 		void addSample(double x) {
@@ -44,6 +47,9 @@ namespace rt {
 		double _mean = 0.0;
 	};
 
+	/*
+	https://qpp.bitbucket.io/post/streaming_algorithm/
+	*/
 	class OnlineVariance {
 	public:
 		void addSample(double x) {
@@ -63,46 +69,30 @@ namespace rt {
 		double _m = 0.0;
 	};
 
-	// https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Online_algorithm
-	class IncrementalStatatics {
+	/*
+	  https://softwareengineering.stackexchange.com/questions/337617/algorithm-for-windowed-online-covariance
+	*/
+	class OnlineCovariance {
 	public:
-		bool hasSample() const {
-			return 0 < _n;
-		}
-		void addSample(double x) {
+		void addSample(double x, double y) {
 			_n++;
-			double delta = x - _mean;
-			_mean += delta / _n;
-			double delta2 = x - _mean;
-			_M2 += delta * delta2;
-		}
-		double variance() const {
-			// return _M2 / (_n - 1);
-			return _M2 / _n;
-		}
-		double avarage() const {
-			return _mean;
+			double dx = (x - _meanX) / _n;
+			double dy = (y - _meanY) / _n;
+			_meanX += dx;
+			_meanY += dy;
+			_C += (_n - 1.0) * dx * dy - _C / _n;
 		}
 
-		IncrementalStatatics merge(const IncrementalStatatics &rhs) const {
-			IncrementalStatatics r;
-
-			double ma = _mean;
-			double mb = rhs._mean;
-			double N = _n;
-			double M = rhs._n;
-			double N_M = N + M;
-			double a = N / N_M;
-			double b = M / N_M;
-			r._mean = a * ma + b * mb;
-			r._M2 = _M2 + rhs._M2;
-			r._n = N_M;
-
-			return r;
+		double sampleCovariance() const {
+			return _n == 0 ? 0.0 : _C;
+		}
+		double unbiasedCovariance() const {
+			return _n == 0 ? 0.0 : _n / (_n - 1) * _C;
 		}
 	private:
-		Kahan _mean = 0.0;
-		Kahan _M2 = 0.0;
 		int _n = 0;
+		double _meanX = 0.0;
+		double _meanY = 0.0;
+		double _C = 0.0;
 	};
 }

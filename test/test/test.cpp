@@ -80,6 +80,42 @@ TEST_CASE("Stats", "[Stats]") {
 			REQUIRE(glm::abs(unbiasedVariance - onlineVariance.unbiasedVariance()) < 0.000001);
 		}
 	}
+
+	{
+		for (int j = 0; j < 10000; ++j) {
+			std::vector<double> sampleXs;
+			std::vector<double> sampleYs;
+			int NSample = 1 + random.generate() % 100;
+			for (int i = 0; i < 5; ++i) {
+				double x = random.uniform(-1, 2);
+				double y = random.uniform(-2, 1);
+				sampleXs.push_back(x);
+				sampleYs.push_back(y);
+			}
+
+			rt::OnlineMean meanX;
+			rt::OnlineMean meanY;
+			for (int i = 0; i < sampleXs.size(); ++i) {
+				meanX.addSample(sampleXs[i]);
+			}
+			for (int i = 0; i < sampleYs.size(); ++i) {
+				meanY.addSample(sampleYs[i]);
+			}
+			
+			double s = 0.0;
+			for (int i = 0; i < sampleXs.size(); ++i) {
+				s += (sampleXs[i] - meanX.mean()) * (sampleYs[i] - meanY.mean());
+			}
+			s /= sampleXs.size();
+
+			rt::OnlineCovariance onlineCov;
+			for (int i = 0; i < sampleXs.size(); ++i) {
+				onlineCov.addSample(sampleXs[i], sampleYs[i]);
+			}
+
+			REQUIRE(glm::abs(s - onlineCov.sampleCovariance()) < 0.000001);
+		}
+	}
 }
 
 
