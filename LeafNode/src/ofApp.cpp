@@ -1,5 +1,6 @@
 #include "ofApp.h"
 
+static bool DRAW_ORANEG = true;
 
 inline ofVec3f toOf(rt::Vec3 v) {
 	return ofVec3f(v.x, v.y, v.z);
@@ -27,6 +28,58 @@ inline void drawOBB(rt::OBB obb) {
 	ofPopMatrix();
 	ofFill();
 }
+// ç≈Ç‡äÓñ{ÇÃBVHè’ìÀîªíË
+inline void drawBVHOBB(int viewDepth, const rt::BVHNode &node, const rt::BezierEntity *beziers, int depth) {
+	if (node.is<std::unique_ptr<rt::BVHOBBBranch>>()) {
+		const std::unique_ptr<rt::BVHOBBBranch> &branch = node.get<std::unique_ptr<rt::BVHOBBBranch>>();
+		if (viewDepth == depth) {
+			drawOBB(branch->obb_L);
+			drawOBB(branch->obb_R);
+		}
+		drawBVHOBB(viewDepth, branch->lhs, beziers, depth + 1);
+		drawBVHOBB(viewDepth, branch->rhs, beziers, depth + 1);
+	}
+	if (node.is<rt::BVHLeaf>()) {
+		auto drawBezier = [=](rt::BezierQuadratic3D bz) {
+			ofNoFill();
+			ofPolyline line;
+			int N = 40;
+			for (int i = 0; i < N; ++i) {
+				float t = (float)i / (N - 1);
+				auto p = bz.evaluate(t);
+
+				line.addVertex(p.x, p.y, p.z);
+
+				auto tangent = glm::normalize(bz.tangent(t));
+				auto from_bxdf = rt::from_bxdf_basis_transform(tangent);
+			}
+
+			line.draw();
+
+			ofFill();
+
+			ofDrawSphere(toOf(bz[0]), 0.002f);
+			ofDrawSphere(toOf(bz[1]), 0.002f);
+			ofDrawSphere(toOf(bz[2]), 0.002f);
+		};
+		//static int k = 0;
+		//if (k++ % 2 == 0) {
+		//	ofSetColor(ofColor::orange);
+		//}
+		//else {
+		//	ofSetColor(ofColor::blue);
+		//}
+		//if (DRAW_ORANEG == false) {
+		//	ofSetColor(ofColor::blue);
+		//}
+		const rt::BVHLeaf &leaf = node.get<rt::BVHLeaf>();
+		for (int i = 0; i < leaf.bezierIndices.size(); ++i) {
+			auto index = leaf.bezierIndices[i];
+			drawBezier(beziers[index].bezier);
+		}
+	}
+}
+
 //--------------------------------------------------------------
 void ofApp::setup() {
 	_imgui.setup();
@@ -218,24 +271,29 @@ void ofApp::draw(){
 
 		// rt::AABB aabb(rt::Vec3(-1.0), rt::Vec3(1.0));
 
-		int NRay = 300;
-		for (int i = 0; i < NRay; ++i) {
-			double s = (double)i / NRay;
-			auto o = rt::Vec3(glm::mix(-2.0, 2.0, s), _ray_y, _ray_z);
-			auto d = rt::Vec3(0.0, 0.0, -1.0);
+		//int NRay = 300;
+		//for (int i = 0; i < NRay; ++i) {
+		//	double s = (double)i / NRay;
+		//	auto o = rt::Vec3(glm::mix(-2.0, 2.0, s), _ray_y, _ray_z);
+		//	auto d = rt::Vec3(0.0, 0.0, -1.0);
 
-			// auto tmin = rt::intersect_obb(rt::Ray(o, d), obb)
-			// auto tmin = rt::intersect_aabb(rt::Ray(o, d), rt::Vec3(1.0) / d, aabb)
-			if (auto tmin = rt::intersect_obb(rt::Ray(o, d), obb)) {
-				ofDrawSphere(toOf(o), 0.01f);
-				ofDrawLine(toOf(o), toOf(o + d * (*tmin)));
-			}
-			else {
-				ofSetColor(ofColor::orange);
-				ofDrawSphere(toOf(o), 0.01f);
-				ofDrawLine(toOf(o), toOf(o + d * 5.0));
-			}
-		}
+		//	// auto tmin = rt::intersect_obb(rt::Ray(o, d), obb)
+		//	// auto tmin = rt::intersect_aabb(rt::Ray(o, d), rt::Vec3(1.0) / d, aabb)
+		//	if (auto tmin = rt::intersect_obb(rt::Ray(o, d), obb)) {
+		//		ofDrawSphere(toOf(o), 0.01f);
+		//		ofDrawLine(toOf(o), toOf(o + d * (*tmin)));
+		//	}
+		//	else {
+		//		ofSetColor(ofColor::orange);
+		//		ofDrawSphere(toOf(o), 0.01f);
+		//		ofDrawLine(toOf(o), toOf(o + d * 5.0));
+		//	}
+		//}
+	}
+
+	if (_hasNode) {
+		ofSetColor(ofColor::orange);
+		drawBVHOBB(_viewDepth, _node, _beziers.data(), 0);
 	}
 
 	_camera.end();
@@ -253,6 +311,40 @@ void ofApp::draw(){
 
 	ImGui::InputFloat("ray y", &_ray_y);
 	ImGui::InputFloat("ray z", &_ray_z);
+
+	ImGui::Checkbox("DRAW_ORANEG", &DRAW_ORANEG);
+
+	//if (ImGui::Button("obb bvh")) {
+	//	_beziers.clear();
+	//	for (int i = 0; i < _leafs[_index].beizers.size(); ++i) {
+	//		auto bezier = _leafs[_index].beizers[i];
+
+	//		rt::BezierEntity e;
+	//		e.bezier = bezier.bezier;
+	//		e.radius = bezier.radius;
+	//		_beziers.push_back(e);
+	//	}
+
+
+	//	std::vector<int> bezierIndices;
+	//	for (int i = 0; i < _beziers.size(); ++i) {
+	//		bezierIndices.push_back(i);
+	//	}
+
+	//	rt::AABB aabb;
+	//	for (int i = 0; i < bezierIndices.size(); ++i) {
+	//		auto bezierEntity = _beziers[bezierIndices[i]];
+	//		auto bbox = bezierEntity.bezier.boundingBoxConvexhull();
+	//		bbox.expand(bezierEntity.radius);
+	//		aabb.expand(bbox);
+	//	}
+
+	//	rt::Xor random;
+	//	_node = build_tree_obb(aabb, bezierIndices, _beziers.data(), &random, 0);
+	//	_hasNode = true;
+	//}
+
+	ImGui::InputInt("_viewDepth", &_viewDepth);
 
 	auto wp = ImGui::GetWindowPos();
 	auto ws = ImGui::GetWindowSize();

@@ -4,3 +4,64 @@
 2017-08-18 23:51:24.666 DEBUG [25020] [ofApp::setup@260] 800 x 600
 2017-08-18 23:54:11.633 DEBUG [10712] [ofApp::setup@259] render begin
 2017-08-18 23:54:11.633 DEBUG [10712] [ofApp::setup@260] 800 x 600
+2017-08-19 20:56:34.875 DEBUG [11276] [ofApp::setup@259] render begin
+2017-08-19 20:56:34.876 DEBUG [11276] [ofApp::setup@260] 320 x 240
+2017-08-19 20:56:43.696 DEBUG [11276] [ofApp::update@428] step: 5.91774
+2017-08-19 20:56:49.898 DEBUG [11276] [ofApp::update@428] step: 6.14024
+2017-08-19 21:02:09.900 DEBUG [13944] [ofApp::setup@259] render begin
+2017-08-19 21:02:09.902 DEBUG [13944] [ofApp::setup@260] 320 x 240
+2017-08-19 21:02:48.200 DEBUG [27620] [ofApp::setup@259] render begin
+2017-08-19 21:02:48.200 DEBUG [27620] [ofApp::setup@260] 320 x 240
+2017-08-19 21:03:41.562 DEBUG [27620] [ofApp::update@428] step: 4.89434
+2017-08-19 21:03:46.758 DEBUG [27620] [ofApp::update@428] step: 5.10716
+2017-08-19 21:04:36.831 DEBUG [26484] [ofApp::setup@259] render begin
+2017-08-19 21:04:36.831 DEBUG [26484] [ofApp::setup@260] 320 x 240
+2017-08-19 21:04:45.304 DEBUG [26484] [ofApp::update@428] step: 5.67804
+2017-08-19 21:04:51.119 DEBUG [26484] [ofApp::update@428] step: 5.76271
+2017-08-19 21:04:56.863 DEBUG [26484] [ofApp::update@428] step: 5.70565
+2017-08-19 21:05:31.586 DEBUG [18372] [ofApp::setup@259] render begin
+2017-08-19 21:05:31.586 DEBUG [18372] [ofApp::setup@260] 320 x 240
+2017-08-19 21:05:40.014 DEBUG [18372] [ofApp::update@428] step: 5.67534
+2017-08-19 21:05:45.813 DEBUG [18372] [ofApp::update@428] step: 5.7407
+2017-08-19 21:07:41.579 DEBUG [10740] [ofApp::setup@259] render begin
+2017-08-19 21:07:41.580 DEBUG [10740] [ofApp::setup@260] 320 x 240
+2017-08-19 21:11:06.611 DEBUG [13552] [ofApp::setup@259] render begin
+2017-08-19 21:11:06.611 DEBUG [13552] [ofApp::setup@260] 320 x 240
+2017-08-19 21:11:14.958 DEBUG [13552] [ofApp::update@428] step: 5.59989
+2017-08-19 21:14:29.112 DEBUG [10280] [ofApp::setup@259] render begin
+2017-08-19 21:14:29.113 DEBUG [10280] [ofApp::setup@260] 320 x 240
+2017-08-19 21:14:37.395 DEBUG [10280] [ofApp::update@428] step: 5.53164
+2017-08-19 21:14:42.960 DEBUG [10280] [ofApp::update@428] step: 5.5024
+2017-08-19 21:14:48.427 DEBUG [10280] [ofApp::update@428] step: 5.43366
+2017-08-19 21:14:53.819 DEBUG [10280] [ofApp::update@428] step: 5.3866
+2017-08-19 21:14:59.163 DEBUG [10280] [ofApp::update@428] step: 5.34091
+2017-08-19 21:15:04.602 DEBUG [10280] [ofApp::update@428] step: 5.43524
+2017-08-19 21:15:39.607 DEBUG [28048] [ofApp::setup@259] render begin
+2017-08-19 21:15:39.608 DEBUG [28048] [ofApp::setup@260] 320 x 240
+2017-08-19 21:15:47.780 DEBUG [28048] [ofApp::update@428] step: 5.47876
+2017-08-19 21:15:53.323 DEBUG [28048] [ofApp::update@428] step: 5.48367
+2017-08-19 21:15:58.785 DEBUG [28048] [ofApp::update@428] step: 5.42614
+2017-08-19 21:16:04.102 DEBUG [28048] [ofApp::update@428] step: 5.31224
+2017-08-19 21:16:09.716 DEBUG [28048] [ofApp::update@428] step: 5.61012
+2017-08-19 21:16:15.565 DEBUG [28048] [ofApp::update@428] step: 5.84394
+2017-08-19 21:16:21.263 DEBUG [28048] [ofApp::update@428] step: 5.69224
+2017-08-19 21:16:26.736 DEBUG [28048] [ofApp::update@428] step: 5.46865
+2017-08-19 21:16:32.256 DEBUG [28048] [ofApp::update@428] step: 5.51636
+2017-08-19 21:16:38.164 DEBUG [28048] [ofApp::update@428] step: 5.90481
+2017-08-19 21:18:51.694 DEBUG [14040] [ofApp::setup@259] render begin
+2017-08-19 21:18:51.695 DEBUG [14040] [ofApp::setup@260] 320 x 240
+2017-08-19 21:19:29.001 DEBUG [14040] [ofApp::update@428] step: 5.44776
+2017-08-19 21:19:34.534 DEBUG [14040] [ofApp::update@428] step: 5.43945
+2017-08-19 21:23:38.200 DEBUG [27784] [ofApp::setup@259] render begin
+2017-08-19 21:23:38.201 DEBUG [27784] [ofApp::setup@260] 320 x 240
+2017-08-19 21:23:47.174 DEBUG [27784] [ofApp::update@428] step: 6.13619
+2017-08-19 21:23:52.875 DEBUG [27784] [ofApp::update@428] step: 5.63291
+2017-08-19 21:25:12.554 DEBUG [23264] [ofApp::setup@259] render begin
+2017-08-19 21:25:12.555 DEBUG [23264] [ofApp::setup@260] 320 x 240
+2017-08-19 21:25:21.457 DEBUG [23264] [ofApp::update@428] step: 6.05759
+2017-08-19 21:27:00.337 DEBUG [2808] [ofApp::setup@259] render begin
+2017-08-19 21:27:00.337 DEBUG [2808] [ofApp::setup@260] 320 x 240
+2017-08-19 21:27:09.026 DEBUG [2808] [ofApp::update@428] step: 5.95709
+2017-08-19 21:27:14.693 DEBUG [2808] [ofApp::update@428] step: 5.61007
+2017-08-19 21:27:20.269 DEBUG [2808] [ofApp::update@428] step: 5.53994
+2017-08-19 21:27:25.867 DEBUG [2808] [ofApp::update@428] step: 5.59229

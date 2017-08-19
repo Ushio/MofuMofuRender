@@ -14,8 +14,8 @@
 #include "transform.hpp"
 #include "objload.hpp"
 
-// ƒfƒvƒƒCƒ‚[ƒh‚©H
-#define DEPLOY_MODE 1
+// ãƒ‡ãƒ—ãƒ­ã‚¤ãƒ¢ãƒ¼ãƒ‰ã‹ï¼Ÿ
+#define DEPLOY_MODE 0
 
 
 #if DEPLOY_MODE
