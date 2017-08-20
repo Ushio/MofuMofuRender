@@ -1,10 +1,10 @@
 #pragma once
 
 #include <array>
+#include <tuple>
 #include "geometry.hpp"
 #include "aabb.hpp"
-#include "catch.hpp"
-#include <tuple>
+#include "misc.hpp"
 
 namespace rt {
 	// o + t * d, cとの最近傍距離の平方
