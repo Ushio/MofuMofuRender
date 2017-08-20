@@ -219,6 +219,14 @@ namespace rt {
 		return branch;
 	}
 
+	// 早期枝刈りのための円筒
+	// これで曲線を包む
+	struct Tube {
+		Vec3 o;
+		Vec3 d;
+		double radiusSq = 0.0;
+	};
+
 	// TODO Name
 	struct BVHBezierIntersection : public CurveIntersection {
 		BVHBezierIntersection(){}
@@ -229,7 +237,7 @@ namespace rt {
 	};
 
 	// 最も基本のBVH衝突判定
-	inline bool intersect_bvh(const Ray &ray, const Vec3 &inv_d, const MoveAndRotate &projection, const BVHNode &node, const BezierEntity *beziers, const double *maxDistanceSqsFromSegment, BVHBezierIntersection *intersection, double *tmin) {
+	inline bool intersect_bvh(const Ray &ray, const Vec3 &inv_d, const MoveAndRotate &projection, const BVHNode &node, const BezierEntity *beziers, const Tube *tubes, BVHBezierIntersection *intersection, double *tmin) {
 		bool intersected = false;
 		if (node.is<BVHLeaf>()) {
 			const BVHLeaf &leaf = node.get<BVHLeaf>();
@@ -239,7 +247,7 @@ namespace rt {
 				// 直線からの最大距離よりも離れている場合は、衝突はありえないので、早期に枝刈りをする
 				// AABB による判定はかなりざっくりなので、とても効果がある
 				const BezierQuadratic3D &origBezier = beziers[index].bezier;
-				if (maxDistanceSqsFromSegment[index] < distanceSqRayRay(ray.o, ray.d, origBezier[0], origBezier[2] - origBezier[0])) {
+				if (tubes[index].radiusSq < distanceSqRayRay(ray.o, ray.d, tubes[index].o, tubes[index].d)) {
 					continue;
 				}
 
@@ -264,13 +272,13 @@ namespace rt {
 		} else {
 			const std::unique_ptr<BVHBranch> &branch = node.get<std::unique_ptr<BVHBranch>>();
 			if (auto aabb_tmin = intersect_aabb(ray, inv_d, branch->aabb_L)) {
-				if (intersect_bvh(ray, inv_d, projection, branch->lhs, beziers, maxDistanceSqsFromSegment, intersection, tmin)) {
+				if (intersect_bvh(ray, inv_d, projection, branch->lhs, beziers, tubes, intersection, tmin)) {
 					intersected = true;
 				}
 			}
 
 			if (auto aabb_tmin = intersect_aabb(ray, inv_d, branch->aabb_R)) {
-				if (intersect_bvh(ray, inv_d, projection, branch->rhs, beziers, maxDistanceSqsFromSegment, intersection, tmin)) {
+				if (intersect_bvh(ray, inv_d, projection, branch->rhs, beziers, tubes, intersection, tmin)) {
 					intersected = true;
 				}
 			}
@@ -294,23 +302,41 @@ namespace rt {
 				_aabb.expand(bbox);
 			}
 
-			// ブリュートフォースのタイトフィッティング
-			_maxDistanceSqsFromSegment.resize(_beziers.size());
+			// Tubeのタイトフィッティング
+			// 幸いにして、今回は2次のベジエ曲線を採用しており、
+			// 簡単にTubeをよりタイトにフィッティングすることができる
+			_boundingTubes.resize(_beziers.size());
 			for (int i = 0; i < _beziers.size(); ++i) {
 				auto bezier = _beziers[i];
 
-				double maxDistanceSq = 0.0;
+				Vec3 farP_on_segment;
+				Vec3 farP_on_bezier;
+				double farDistance = 0.0;
+
 				const int NSplit = 1000;
 				for (int j = 0; j < NSplit; ++j) {
 					static Remap toT(0, NSplit - 1, 0.0, 1.0);
 					double t = toT(j);
-					auto p = bezier.bezier.evaluate(t);
-					double distanceSq = rt::distanceSqPointRay(p, bezier.bezier[0], bezier.bezier[2] - bezier.bezier[0]);
-					double d = glm::sqrt(distanceSq);
-					double maxDistance = (d + bezier.radius);
-					maxDistanceSq = std::max(maxDistanceSq, maxDistance * maxDistance);
+					auto p_on_bezier = bezier.bezier.evaluate(t);
+					auto o = bezier.bezier[0];
+					auto d = bezier.bezier[2] - bezier.bezier[0];
+					double T = rt::distanceSqPointRayT(p_on_bezier, o, d);
+					auto p_on_segment = o + T * d;
+					double distance = glm::distance(p_on_segment, p_on_bezier);
+					if (farDistance < distance) {
+						farP_on_segment = p_on_segment;
+						farP_on_bezier = p_on_bezier;
+						farDistance = distance;
+					}
 				}
-				_maxDistanceSqsFromSegment[i] = maxDistanceSq;
+
+				Vec3 offset = (farP_on_bezier - farP_on_segment) * 0.5;
+				double radius = farDistance * 0.5 + bezier.radius;
+				Tube tube;
+				tube.o = bezier.bezier[0] + offset;
+				tube.d = glm::normalize(bezier.bezier[2] - bezier.bezier[0]);
+				tube.radiusSq = radius * radius;
+				_boundingTubes[i] = tube;
 			}
 		}
 		bool intersect(const Ray &ray, BVHBezierIntersection *intersection, double *tmin) const {
@@ -322,7 +348,7 @@ namespace rt {
 				auto projection = rt::ray_projection(ray.o, ray.d);
 
 				// Simple
-				return intersect_bvh(ray, inv_d, projection, _node, _beziers.data(), _maxDistanceSqsFromSegment.data(), intersection, tmin);
+				return intersect_bvh(ray, inv_d, projection, _node, _beziers.data(), _boundingTubes.data(), intersection, tmin);
 			}
 			return false;
 		}
@@ -334,7 +360,7 @@ namespace rt {
 		std::vector<BezierEntity> _beziers;
 
 		// 早期枝刈りのための、線分からの最大距離の平方を前計算する
-		std::vector<double> _maxDistanceSqsFromSegment;
+		std::vector<Tube> _boundingTubes;
 		
 		BVHNode _node;
 		Xor _random;
