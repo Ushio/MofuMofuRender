@@ -5,6 +5,7 @@
 #include "geometry.hpp"
 #include "aabb.hpp"
 #include "misc.hpp"
+#include "cardano.hpp"
 
 namespace rt {
 	// o + t * d, cとの最近傍距離の平方
@@ -389,5 +390,62 @@ namespace rt {
 			bool intersect_R = intersect_bezier(depth - 1, radius, radiusSq, original, cr, vm, v1, tmin, intersection);
 			return intersect_L || intersect_R;
 		}
+	}
+
+	/*
+	  カルダノの公式を使って求めるもの
+	　残念ながら、遅い。
+	*/
+	inline bool intersect_bezier_cardano(int , double radius, double radiusSq, const BezierQuadratic3D &original, const BezierQuadratic3D &, double , double , double *tmin, CurveIntersection *intersection) {
+		auto p0 = rt::Vec2(original[0]);
+		auto p1 = rt::Vec2(original[1]);
+		auto p2 = rt::Vec2(original[2]);
+		auto A = p1 - p0;
+		auto B = p2 - p1 - A;
+		auto M = rt::Vec2(0.0, 0.0);
+
+		auto M_tap = p0 - M;
+
+		auto a = glm::dot(B, B);
+		auto b = 3.0 * glm::dot(A, B);
+		auto c = 2.0 * glm::dot(A, A) + glm::dot(M_tap, B);
+		auto d = glm::dot(M_tap, A);
+
+		double t[3];
+		int N = cardano_solve(a, b, c, d, t);
+
+		bool intersected = false;
+		for (int i = 0; i < N; ++i) {
+			double this_t = glm::clamp(t[i], 0.0, 1.0);
+			auto this_P = original.evaluate(this_t);
+			if (this_P.z < 0.0 || *tmin < this_P.z) {
+				continue;
+			}
+			double distanceSq = glm::distance2(rt::Vec2(this_P), M);
+			if (radiusSq < distanceSq) {
+				continue;
+			}
+
+			*tmin = this_P.z;
+			intersection->bezier_t = this_t;
+			intersection->h = glm::sqrt(distanceSq) / radius;
+
+			Vec2 dir = Vec2(original.tangent(this_t));
+			Vec2 to_zero = -Vec2(this_P);
+			Vec2 rhs_dir(dir.y, -dir.x);
+			/*
+			どちらを横切るか？
+			lhs
+			-(ray)-------->
+			rhs
+			*/
+			bool isRhs = 0.0 > glm::dot(to_zero, rhs_dir);
+			if (isRhs) {
+				intersection->h = -intersection->h;
+			}
+
+			intersected = true;
+		}
+		return intersected;
 	}
 }

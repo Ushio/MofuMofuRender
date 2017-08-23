@@ -178,6 +178,7 @@ void ofApp::draw(){
 		rt::CurveIntersection intersection;
 
 		bool intersected = rt::intersect_bezier_standard(15, radius, radius * radius, bezier, bezier, 0.0, 1.0, &tmin, &intersection);
+		//bool intersected = rt::intersect_bezier_cardano(15, radius, radius * radius, bezier, bezier, 0.0, 1.0, &tmin, &intersection);
 
 		// origin rejection
 		if (intersected) {
@@ -221,11 +222,12 @@ void ofApp::draw(){
 	ofSetColor(ofColor::green);
 	ofDrawLine(toOf(p1), toOf(p2));
 
+#endif
+
 	_camera.end();
 
 	ofDisableDepthTest();
 	ofSetColor(255);
-#endif
 
 	// _image.draw(0, 0);
 
