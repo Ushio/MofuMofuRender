@@ -9,17 +9,16 @@ inline ofPixels toOf(const rt::Image &image) {
 	pixels.allocate(image.width(), image.height(), OF_IMAGE_COLOR);
 	uint8_t *dst = pixels.getPixels();
 
-	double scale = 1.0;
-
+	static rt::Remap colorgrading(0.26, 1.0, 0.0, 1.0);
 	tbb::parallel_for(tbb::blocked_range<int>(0, image.height()), [&](const tbb::blocked_range<int> &range) {
 		for (int y = range.begin(); y < range.end(); ++y) {
 			for (int x = 0; x < image.width(); ++x) {
 				int index = y * image.width() + x;
 				auto px = *image.pixel(x, y);
 				auto L = px.color / (double)px.sample;
-				dst[index * 3 + 0] = (uint8_t)glm::clamp(glm::pow(L.x * scale, 1.0 / 2.2) * 255.0, 0.0, 255.99999);
-				dst[index * 3 + 1] = (uint8_t)glm::clamp(glm::pow(L.y * scale, 1.0 / 2.2) * 255.0, 0.0, 255.99999);
-				dst[index * 3 + 2] = (uint8_t)glm::clamp(glm::pow(L.z * scale, 1.0 / 2.2) * 255.0, 0.0, 255.99999);
+				dst[index * 3 + 0] = (uint8_t)glm::clamp(colorgrading(glm::pow(L.x, 1.0 / 2.2)) * 255.0, 0.0, 255.99999);
+				dst[index * 3 + 1] = (uint8_t)glm::clamp(colorgrading(glm::pow(L.y, 1.0 / 2.2)) * 255.0, 0.0, 255.99999);
+				dst[index * 3 + 2] = (uint8_t)glm::clamp(colorgrading(glm::pow(L.z, 1.0 / 2.2)) * 255.0, 0.0, 255.99999);
 			}
 		}
 	});
@@ -370,6 +369,7 @@ void ofApp::setup() {
 			auto random_2 = rt::Vec3(random.uniform(-1.0, 1.0), random.uniform(-1.0, 1.0), random.uniform(-1.0, 1.0)) * 0.04;
 
 			// 毛の長さ
+			// double baseLength = random.uniform(0.01, 0.07) + random.uniform(0.01, 0.07) + random.uniform(0.01, 0.07);
 			double baseLength = random.uniform(0.0, 0.05) + random.uniform(0.0, 0.05) + random.uniform(0.0, 0.05);
 
 			rt::BezierQuadratic3D bz(p,
