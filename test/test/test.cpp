@@ -20,7 +20,7 @@ int main(int argc, char* const argv[])
 	// テストを指定する場合
 	char* const custom_argv[] = {
 		"",
-		"[Stats]"
+		"[Ap energy conservation]"
 	};
 	Catch::Session().run(sizeof(custom_argv) / sizeof(custom_argv[0]), custom_argv);
 #else
@@ -374,6 +374,30 @@ TEST_CASE("Np Logistic Sample", "[Np Logistic Sample]") {
 	}
 }
 
+TEST_CASE("Ap energy conservation", "[Ap energy conservation]") {
+	using namespace rt;
+
+	rt::Xor random;
+
+	for (int j = 0; j < 10000; ++j) {
+		double h = random.uniform(-1, 1);
+		double thetaO = random.uniform(-glm::pi<double>() * 0.5, glm::pi<double>() * 0.5);
+		double sinThetaO = glm::sin(thetaO);
+		double cosThetaO = glm::cos(thetaO);
+		double eta = 1.55;
+		Vec3 T(1.0);
+		std::array<Vec3, pMax + 1> ap = rt::Ap(cosThetaO, eta, h, T);
+
+		Vec3 sum;
+		for (int i = 0; i < ap.size(); ++i) {
+			sum += ap[i];
+		}
+
+		for (int i = 0; i < 3; ++i) {
+			REQUIRE(glm::abs(sum[i] - 1.0) < 0.0001);
+		}
+	}
+}
 
 /*
  このテストはビジュアライズしたほうが遥かにいい

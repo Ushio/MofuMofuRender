@@ -71,11 +71,11 @@ void ofApp::draw(){
 
 	ofClear(0);
 	_camera.begin();
-	ofPushMatrix();
-	ofRotateZ(90.0f);
-	ofSetColor(255);
-	ofDrawGridPlane(1.0f);
-	ofPopMatrix();
+	//ofPushMatrix();
+	//ofRotateZ(90.0f);
+	//ofSetColor(255);
+	//ofDrawGridPlane(1.0f);
+	//ofPopMatrix();
 
 	ofPushMatrix();
 	ofDrawAxis(50);
@@ -102,7 +102,7 @@ void ofApp::draw(){
 
 	using namespace rt;
 
-#if 0
+#if 1
 	// Mp
 	ofSetColor(ofColor::orange);
 	ofSetLineWidth(3);
@@ -130,7 +130,7 @@ void ofApp::draw(){
 	polyline.draw();
 #endif
 
-#if 0
+#if 1
 	// サンプリングが確立密度関数に従っているか
 	{
 		std::array<int, 50> histgram = {};
@@ -169,7 +169,7 @@ void ofApp::draw(){
 	}
 #endif
 
-#if 1
+#if 0
 	// Np
 	double phiO = glm::radians(_phiO);
 	Vec3 wo(0.0, glm::cos(phiO), glm::sin(phiO));
@@ -263,6 +263,8 @@ void ofApp::draw(){
 		poly.draw();
 	}
 #endif
+
+#if 0
 	{
 		static rt::Xor random;
 
@@ -277,7 +279,7 @@ void ofApp::draw(){
 		ofPolyline poly;
 
 		std::array<int, 100> histgram = {};
-		int NSample = 1000000;
+		int NSample = 200000;
 		for (int i = 0; i < NSample; ++i) {
 			static rt::Remap toIndex(a, b, 0, histgram.size());
 
@@ -304,9 +306,11 @@ void ofApp::draw(){
 			poly.addVertex(toOf(wi * similarNp));
 		}
 		ofSetColor(ofColor::orange);
+		ofSetLineWidth(2);
 		poly.draw();
+		ofSetLineWidth(1);
 	}
-
+#endif
 	_camera.end();
 
 	ofDisableDepthTest();
