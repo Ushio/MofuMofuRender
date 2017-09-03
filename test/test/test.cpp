@@ -20,7 +20,7 @@ int main(int argc, char* const argv[])
 	// テストを指定する場合
 	char* const custom_argv[] = {
 		"",
-		"[Ap energy conservation]"
+		"[Fur Importance Sampling]"
 	};
 	Catch::Session().run(sizeof(custom_argv) / sizeof(custom_argv[0]), custom_argv);
 #else
@@ -532,8 +532,8 @@ TEST_CASE("Fur Importance Sampling", "[Fur Importance Sampling]") {
 			FurBSDFParams params;
 			params.h = random.uniform(-1.0, 1.0);
 			params.sigma_a = Vec3(0.0);
-			params.beta_n = random.uniform(0.2, 1.0);
-			params.beta_m = random.uniform(0.2, 1.0);
+			params.beta_n = random.uniform(0.01, 1.0);
+			params.beta_m = random.uniform(0.01, 1.0);
 			params.eta = 1.55;
 			params.alpha = 0.0;
 

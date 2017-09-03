@@ -118,7 +118,8 @@ void ofApp::draw(){
 	ofPolyline polyline;
 	int N = 1000;
 	for (int i = 0; i < N; ++i) {
-		float theta_i = ofMap(i, 0, N, -180, 180);
+		// float theta_i = ofMap(i, 0, N, -180, 180);
+		float theta_i = ofMap(i, 0, N, -90, 90);
 		ofVec3f wi = ofVec3f(0, 0, 1.0f).rotated(theta_i, ofVec3f(0, 1, 0));
 
 		double sinThetaI = wi.x;
@@ -141,10 +142,20 @@ void ofApp::draw(){
 		for (int i = 0; i < NSample; ++i) {
 			double eps1 = random.uniform();
 			double eps2 = random.uniform();
-			double u = v * glm::log(glm::exp(1.0 / v) - 2.0 * eps1 * glm::sinh(1.0 / v));
+			// Importance Sampling for Physically-Based Hair Fiber Models ver
+			// double u = v * glm::log(glm::exp(1.0 / v) - 2.0 * eps1 * glm::sinh(1.0 / v));
+
+			// Numerically stable sampling of the von Mises Fisher distribution on S2 (and other tricks) ver
+			// double u = v * glm::log(glm::exp(-1.0 / v) + 2.0 * eps1 * glm::sinh(1.0 / v));
+
+			// Numerically stable sampling of the von Mises Fisher distribution on S2 (and other tricks) ver
+			// avoids overflow ver.
+			double u = 1.0 + v * glm::log(eps1 + (1.0 - eps1) * glm::exp(-2.0 / v));
+
 			double theta_cone = -glm::asin(sinThetaO);
 			double theta_tap = glm::pi<double>() * 0.5 - theta_cone;
 			double theta_i = glm::asin(u * glm::cos(theta_tap) + glm::sqrt(1.0 - u * u) * glm::cos(glm::two_pi<double>() * eps2) * glm::sin(theta_tap));
+			//double theta_i = glm::asin(u + glm::sqrt(1.0 - u * u) * glm::cos(glm::two_pi<double>() * eps2));
 
 			static rt::Remap toIndex(-glm::pi<double>() * 0.5, glm::pi<double>() * 0.5, 0, histgram.size());
 			int index = toIndex(theta_i);

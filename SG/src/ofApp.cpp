@@ -64,28 +64,53 @@ void ofApp::draw() {
 	mesh.clear();
 	mesh.setMode(OF_PRIMITIVE_POINTS);
 
-	Vec3 P = glm::normalize(Vec3(1, 1, 0));
-	double v = _v;
-	Xor random;
-	for (int i = 0; i < 5000; ++i) {
-		Vec3 x = uniform_on_unit_sphere(&random);
-		double value = _check ? sg(x, v, P) : sg_2(x, v, P);
+	//Vec3 P = glm::normalize(Vec3(1, 1, 0));
+	//double v = _v;
+	//Xor random;
+	//for (int i = 0; i < 5000; ++i) {
+	//	Vec3 x = uniform_on_unit_sphere(&random);
+	//	double value = _check ? sg(x, v, P) : sg_2(x, v, P);
 
-		double csch = 1.0 / glm::sinh(1.0 / v);
-		double same = csch / (2.0 * v) * glm::exp(glm::dot(P, x) / v);
+	//	double csch = 1.0 / glm::sinh(1.0 / v);
+	//	double same = csch / (2.0 * v) * glm::exp(glm::dot(P, x) / v);
 
-		// double value = _check ? same : sg_normalized(x, v, P);
-		// value = same;
-		//printf("df %.5f\n", glm::abs(same - value));
-		//if (_check) {
-		//	value = same;
-		//}
+	//	// double value = _check ? same : sg_normalized(x, v, P);
+	//	// value = same;
+	//	//printf("df %.5f\n", glm::abs(same - value));
+	//	//if (_check) {
+	//	//	value = same;
+	//	//}
 
-		auto plot = x * value;
-		mesh.addVertex(toOf(plot));
+	//	auto plot = x * value;
+	//	mesh.addVertex(toOf(plot));
+	//}
+	//ofSetColor(255);
+	//mesh.draw();
+
+	{
+		Xor random;
+		double v = _v;
+		for (int i = 0; i < 10000; ++i) {
+			// 純粋なフォンミーゼス分布のサンプリング
+			// P(0, 0, 1)
+			double eps1 = random.uniform();
+			double eps2 = random.uniform();
+
+			double W = v * glm::log(glm::exp(-1.0 / v) + 2.0 * eps1 * glm::sinh(1.0 / v));
+			Vec2 V = Vec2(glm::cos(eps2 * glm::two_pi<double>()), glm::sin(eps2 * glm::two_pi<double>()));
+			
+			double r = glm::sqrt(1.0 - W * W);
+			Vec3 omega(
+				r * V.x,
+				r * V.y,
+				W
+			);
+			omega = glm::rotateX(omega, random.uniform(0.0, glm::two_pi<double>()));
+			mesh.addVertex(toOf(omega));
+		}
+		ofSetColor(255);
+		mesh.draw();
 	}
-	ofSetColor(255);
-	mesh.draw();
 
 	//{
 	//	rt::Xor random;
@@ -136,7 +161,7 @@ void ofApp::draw() {
 	ImGui::Begin("Config Panel");
 	ImGui::Text("fps: %.2f", ofGetFrameRate());
 
-	ImGui::SliderFloat("v", &_v, 0.1f, 50.0f);
+	ImGui::SliderFloat("v", &_v, 0.01f, 2.0f);
 	ImGui::Checkbox("_check", &_check);
 	ImGui::SliderFloat("theta", &_theta, -glm::pi<double>() * 0.5, glm::pi<double>() * 0.5);
 	ImGui::SliderFloat("phi", &_phi, -glm::pi<double>(), glm::pi<double>());

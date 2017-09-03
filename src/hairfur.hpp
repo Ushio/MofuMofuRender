@@ -270,7 +270,11 @@ namespace rt {
 	θを返す
 	*/
 	inline double sampleMp(double eps1, double eps2, double v, double sinThetaO) {
-		double u = v * glm::log(glm::exp(1.0 / v) - 2.0 * eps1 * glm::sinh(1.0 / v));
+		// double u = v * glm::log(glm::exp(1.0 / v) - 2.0 * eps1 * glm::sinh(1.0 / v));
+		// Numerically stable sampling of the von Mises Fisher distribution on S2 (and other tricks) ver
+		// avoids overflow ver.
+		double u = 1.0 + v * glm::log(eps1 + (1.0 - eps1) * glm::exp(-2.0 / v));
+
 		double theta_cone = -glm::asin(sinThetaO);
 		double theta_tap = glm::pi<double>() * 0.5 - theta_cone;
 		return glm::asin(u * glm::cos(theta_tap) + glm::sqrt(1.0 - u * u) * glm::cos(glm::two_pi<double>() * eps2) * glm::sin(theta_tap));

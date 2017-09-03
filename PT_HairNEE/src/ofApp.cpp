@@ -9,7 +9,7 @@ inline ofPixels toOf(const rt::Image &image) {
 	pixels.allocate(image.width(), image.height(), OF_IMAGE_COLOR);
 	uint8_t *dst = pixels.getPixels();
 
-	static rt::Remap colorgrading(0.26, 1.0, 0.0, 1.0);
+	static rt::Remap colorgrading(0.26, 0.9, 0.0, 1.0);
 	tbb::parallel_for(tbb::blocked_range<int>(0, image.height()), [&](const tbb::blocked_range<int> &range) {
 		for (int y = range.begin(); y < range.end(); ++y) {
 			for (int x = 0; x < image.width(); ++x) {
