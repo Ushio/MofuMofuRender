@@ -256,7 +256,7 @@ namespace rt {
 				auto radius = beziers[index].radius;
 				rt::CurveIntersection thisIntersection;
 				bool isect = rt::intersect_bezier(4, radius, radius * radius, bezier, bezier, 0.0, 1.0, tmin, &thisIntersection);
-				// bool isect = intersect_bezier_cardano(4, radius, radius * radius, bezier, bezier, 0.0, 1.0, tmin, &thisIntersection);
+				// bool isect = intersect_bezier_standard(4, radius, radius * radius, bezier, bezier, 0.0, 1.0, tmin, &thisIntersection);
 				Vec3 tangent;
 				if (isect) {
 					tangent = bezier.tangent(thisIntersection.bezier_t);

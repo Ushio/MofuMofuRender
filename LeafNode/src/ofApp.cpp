@@ -29,56 +29,56 @@ inline void drawOBB(rt::OBB obb) {
 	ofFill();
 }
 // ç≈Ç‡äÓñ{ÇÃBVHè’ìÀîªíË
-inline void drawBVHOBB(int viewDepth, const rt::BVHNode &node, const rt::BezierEntity *beziers, int depth) {
-	if (node.is<std::unique_ptr<rt::BVHOBBBranch>>()) {
-		const std::unique_ptr<rt::BVHOBBBranch> &branch = node.get<std::unique_ptr<rt::BVHOBBBranch>>();
-		if (viewDepth == depth) {
-			drawOBB(branch->obb_L);
-			drawOBB(branch->obb_R);
-		}
-		drawBVHOBB(viewDepth, branch->lhs, beziers, depth + 1);
-		drawBVHOBB(viewDepth, branch->rhs, beziers, depth + 1);
-	}
-	if (node.is<rt::BVHLeaf>()) {
-		auto drawBezier = [=](rt::BezierQuadratic3D bz) {
-			ofNoFill();
-			ofPolyline line;
-			int N = 40;
-			for (int i = 0; i < N; ++i) {
-				float t = (float)i / (N - 1);
-				auto p = bz.evaluate(t);
-
-				line.addVertex(p.x, p.y, p.z);
-
-				auto tangent = glm::normalize(bz.tangent(t));
-				auto from_bxdf = rt::from_bxdf_basis_transform(tangent);
-			}
-
-			line.draw();
-
-			ofFill();
-
-			ofDrawSphere(toOf(bz[0]), 0.002f);
-			ofDrawSphere(toOf(bz[1]), 0.002f);
-			ofDrawSphere(toOf(bz[2]), 0.002f);
-		};
-		//static int k = 0;
-		//if (k++ % 2 == 0) {
-		//	ofSetColor(ofColor::orange);
-		//}
-		//else {
-		//	ofSetColor(ofColor::blue);
-		//}
-		//if (DRAW_ORANEG == false) {
-		//	ofSetColor(ofColor::blue);
-		//}
-		const rt::BVHLeaf &leaf = node.get<rt::BVHLeaf>();
-		for (int i = 0; i < leaf.bezierIndices.size(); ++i) {
-			auto index = leaf.bezierIndices[i];
-			drawBezier(beziers[index].bezier);
-		}
-	}
-}
+//inline void drawBVHOBB(int viewDepth, const rt::BVHNode &node, const rt::BezierEntity *beziers, int depth) {
+//	if (node.is<std::unique_ptr<rt::BVHOBBBranch>>()) {
+//		const std::unique_ptr<rt::BVHOBBBranch> &branch = node.get<std::unique_ptr<rt::BVHOBBBranch>>();
+//		if (viewDepth == depth) {
+//			drawOBB(branch->obb_L);
+//			drawOBB(branch->obb_R);
+//		}
+//		drawBVHOBB(viewDepth, branch->lhs, beziers, depth + 1);
+//		drawBVHOBB(viewDepth, branch->rhs, beziers, depth + 1);
+//	}
+//	if (node.is<rt::BVHLeaf>()) {
+//		auto drawBezier = [=](rt::BezierQuadratic3D bz) {
+//			ofNoFill();
+//			ofPolyline line;
+//			int N = 40;
+//			for (int i = 0; i < N; ++i) {
+//				float t = (float)i / (N - 1);
+//				auto p = bz.evaluate(t);
+//
+//				line.addVertex(p.x, p.y, p.z);
+//
+//				auto tangent = glm::normalize(bz.tangent(t));
+//				auto from_bxdf = rt::from_bxdf_basis_transform(tangent);
+//			}
+//
+//			line.draw();
+//
+//			ofFill();
+//
+//			ofDrawSphere(toOf(bz[0]), 0.002f);
+//			ofDrawSphere(toOf(bz[1]), 0.002f);
+//			ofDrawSphere(toOf(bz[2]), 0.002f);
+//		};
+//		//static int k = 0;
+//		//if (k++ % 2 == 0) {
+//		//	ofSetColor(ofColor::orange);
+//		//}
+//		//else {
+//		//	ofSetColor(ofColor::blue);
+//		//}
+//		//if (DRAW_ORANEG == false) {
+//		//	ofSetColor(ofColor::blue);
+//		//}
+//		const rt::BVHLeaf &leaf = node.get<rt::BVHLeaf>();
+//		for (int i = 0; i < leaf.bezierIndices.size(); ++i) {
+//			auto index = leaf.bezierIndices[i];
+//			drawBezier(beziers[index].bezier);
+//		}
+//	}
+//}
 
 //--------------------------------------------------------------
 void ofApp::setup() {
@@ -262,9 +262,8 @@ void ofApp::draw(){
 		//obb.a = { xaxis , yaxis , zaxis };
 		//obb.h = {0.5, 1.0, 1.5};
 
-		ofSetColor(ofColor::orange);
-		drawOBB(obb);
-
+		// ofSetColor(ofColor::orange);
+		// drawOBB(obb);
 
 		ofSetColor(ofColor::red);
 		drawAABB(aabb);
@@ -293,7 +292,7 @@ void ofApp::draw(){
 
 	if (_hasNode) {
 		ofSetColor(ofColor::orange);
-		drawBVHOBB(_viewDepth, _node, _beziers.data(), 0);
+		// drawBVHOBB(_viewDepth, _node, _beziers.data(), 0);
 	}
 
 	_camera.end();

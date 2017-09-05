@@ -190,10 +190,10 @@ void ofApp::draw(){
 		}
 		if (intersected) {
 			if (intersection.h < 0.0) {
-				ofSetColor(ofColor::red * glm::abs(intersection.h));
+				ofSetColor(ofColor::blue * glm::abs(intersection.h));
 			}
 			else {
-				ofSetColor(ofColor::blue * glm::abs(intersection.h));
+				ofSetColor(ofColor::red * glm::abs(intersection.h));
 			}
 			ofDrawSphere(toOf(o), 0.01f);
 			ofDrawLine(toOf(o), toOf(o + d * tmin));

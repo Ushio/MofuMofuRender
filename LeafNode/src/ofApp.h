@@ -10,6 +10,7 @@
 #include "stats.hpp"
 #include "aabb.hpp"
 #include "obb.hpp"
+#include "pca.hpp"
 
 struct BeizerFur {
 	double radius = 0.0;
