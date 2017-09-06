@@ -15,7 +15,7 @@
 #include "objload.hpp"
 
 // デプロイモードか？
-#define DEPLOY_MODE 0
+#define DEPLOY_MODE 1
 
 
 #if DEPLOY_MODE
