@@ -1,6 +1,6 @@
 # MofuMofuRender for rtcamp5
 
-![image](008_(58 spp).png)
+![image](008_58 spp.png)
 
 ## environment
 - windows 10 pro
