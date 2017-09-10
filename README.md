@@ -2,6 +2,9 @@
 
 ![render](008_58spp.png)
 
+## 紹介スライド
+[https://speakerdeck.com/ushiostarfish/mofumofurender](https://speakerdeck.com/ushiostarfish/mofumofurender)
+
 ## environment
 - windows 10 pro
 - visual studio 2015 community Update 3
