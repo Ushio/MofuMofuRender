@@ -1,5 +1,7 @@
 # MofuMofuRender for rtcamp5
 
+![image](008_(58 spp).png)
+
 ## environment
 - windows 10 pro
 - visual studio 2015 community Update 3
