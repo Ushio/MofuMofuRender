@@ -20,7 +20,7 @@ int main(int argc, char* const argv[])
 	// テストを指定する場合
 	char* const custom_argv[] = {
 		"",
-		"[Fur Importance Sampling]"
+		"[Np Sampling]"
 	};
 	Catch::Session().run(sizeof(custom_argv) / sizeof(custom_argv[0]), custom_argv);
 #else
@@ -432,6 +432,7 @@ TEST_CASE("Np Sampling", "[Np Sampling]") {
 			double gammaT = SafeASin(sinGammaT);
 
 			double phiI = rt::sampleNp(random.uniform(), phiO, p, s, gammaO, gammaT);
+			REQUIRE(glm::abs(phiI) <= glm::pi<double>());
 
 			int index = toIndex(phiI);
 			index = glm::clamp(index, 0, (int)histgram.size() - 1);
