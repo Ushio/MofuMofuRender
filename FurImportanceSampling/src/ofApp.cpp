@@ -16,6 +16,12 @@ void ofApp::setup() {
 	_camera.setDistance(5.0f);
 
 	_image.allocate(kSize, kSize, OF_IMAGE_GRAYSCALE);
+
+	//for (int i = 0; i < 100; ++i) {
+	//	double x = -2.0 * glm::pi<double>() + i * 0.1;
+	//	double n = std::remainder(x, glm::two_pi<double>());
+	//	printf("%.2f -> %.2f\n", x, n);
+	//}
 }
 
 //--------------------------------------------------------------
@@ -102,7 +108,7 @@ void ofApp::draw(){
 
 	using namespace rt;
 
-#if 1
+#if 0
 	// Mp
 	ofSetColor(ofColor::orange);
 	ofSetLineWidth(3);
@@ -131,7 +137,7 @@ void ofApp::draw(){
 	polyline.draw();
 #endif
 
-#if 1
+#if 0
 	// サンプリングが確立密度関数に従っているか
 	{
 		std::array<int, 50> histgram = {};
@@ -150,12 +156,16 @@ void ofApp::draw(){
 
 			// Numerically stable sampling of the von Mises Fisher distribution on S2 (and other tricks) ver
 			// avoids overflow ver.
+
 			double u = 1.0 + v * glm::log(eps1 + (1.0 - eps1) * glm::exp(-2.0 / v));
 
 			double theta_cone = -glm::asin(sinThetaO);
 			double theta_tap = glm::pi<double>() * 0.5 - theta_cone;
 			double theta_i = glm::asin(u * glm::cos(theta_tap) + glm::sqrt(1.0 - u * u) * glm::cos(glm::two_pi<double>() * eps2) * glm::sin(theta_tap));
-			//double theta_i = glm::asin(u + glm::sqrt(1.0 - u * u) * glm::cos(glm::two_pi<double>() * eps2));
+			
+			// 等価である
+			// double theta_tap = -glm::pi<double>() * 0.5 + theta_cone;
+			// double theta_i = glm::asin(u * glm::cos(theta_tap) - glm::sqrt(1.0 - u * u) * glm::cos(glm::two_pi<double>() * eps2) * glm::sin(theta_tap));
 
 			static rt::Remap toIndex(-glm::pi<double>() * 0.5, glm::pi<double>() * 0.5, 0, histgram.size());
 			int index = toIndex(theta_i);
@@ -180,7 +190,7 @@ void ofApp::draw(){
 	}
 #endif
 
-#if 0
+#if 1
 	// Np
 	double phiO = glm::radians(_phiO);
 	Vec3 wo(0.0, glm::cos(phiO), glm::sin(phiO));
@@ -275,7 +285,7 @@ void ofApp::draw(){
 	}
 #endif
 
-#if 0
+#if 1
 	{
 		static rt::Xor random;
 

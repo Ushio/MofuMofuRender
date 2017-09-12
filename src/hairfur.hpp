@@ -292,13 +292,13 @@ namespace rt {
 		);
 	}
 
-	inline double constrainRadian(double x) {
-		x = fmod(x + glm::pi<double>(), glm::two_pi<double>());
-		if (x < 0.0) {
-			x += glm::two_pi<double>();
-		}
-		return x - glm::pi<double>();
-	}
+	//inline double constrainRadian(double x) {
+	//	x = fmod(x + glm::pi<double>(), glm::two_pi<double>());
+	//	if (x < 0.0) {
+	//		x += glm::two_pi<double>();
+	//	}
+	//	return x - glm::pi<double>();
+	//}
 
 	/*
 	  Npの重点サンプリング
@@ -307,9 +307,7 @@ namespace rt {
 	inline double sampleNp(double eps1, double phiO, int p, double s, double gammaO, double gammaT) {
 		double dphi = Phi(p, gammaO, gammaT) + sampleTrimmedLogistic(eps1, s, -glm::pi<double>(), glm::pi<double>());
 		double phiI = phiO + dphi;
-
-		phiI = constrainRadian(phiI);
-
+		phiI = std::remainder(phiI, glm::two_pi<double>());
 		return phiI;
 	}
 
