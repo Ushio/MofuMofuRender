@@ -5,6 +5,16 @@
 ## 紹介スライド
 [https://speakerdeck.com/ushiostarfish/mofumofurender](https://speakerdeck.com/ushiostarfish/mofumofurender)
 
+## 解説資料
+もふもふレンダリング入門(1)
+http://qiita.com/Ushio/items/b815fcf1cd491ba1079f
+
+もふもふレンダリング入門(2)
+http://qiita.com/Ushio/items/76ab4d25d92735c670db
+
+もふもふレンダリング入門(3)
+https://speakerdeck.com/ushiostarfish/mohumohurendaringuru-men-3
+
 ## environment
 - windows 10 pro
 - visual studio 2015 community Update 3
