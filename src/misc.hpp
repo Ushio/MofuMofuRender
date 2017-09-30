@@ -3,6 +3,10 @@
 #include <functional>
 
 namespace rt {
+	inline double Sqr(double x) {
+		return x * x;
+	}
+
 	class Remap {
 	public:
 		Remap(double inputMin, double inputMax, double outputMin, double outputMax) {

@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 #include "geometry.hpp"
+#include "misc.hpp"
 
 namespace rt {
 	template <int n>
@@ -15,10 +16,6 @@ namespace rt {
 	}
 	template <> double Pow<1>(double v) { return v; }
 	template <> double Pow<0>(double v) { return 1.0; }
-
-	inline double Sqr(double x) {
-		return x * x;
-	}
 
 	inline double SafeASin(double x) {
 		if ((x >= -1.0001 && x <= 1.0001) == false) {

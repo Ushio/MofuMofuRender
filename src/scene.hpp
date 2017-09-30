@@ -20,6 +20,8 @@
 #include "hairfur.hpp"
 #include "bezierbvh.hpp"
 
+#include "cone.hpp"
+
 /*
 約束
 
@@ -575,264 +577,6 @@ namespace rt {
 	};
 
 
-	//class BVHPolygonSceneElement : public SceneElement {
-	//public:
-	//	BVHPolygonSceneElement(const std::vector<Vec3> &vertices, std::vector<int> const &indices, Material material, bool backEmissive)
-	//		: _vertices(vertices)
-	//		, _indices(indices)
-	//		, _material(material)
-	//		, _backEmissive(backEmissive) {
-	//		std::vector<double> areas;
-	//		double area = 0.0;
-	//		for (int i = 0; i < _indices.size(); i += 3) {
-	//			const Vec3 &v0 = _vertices[_indices[i + 0]];
-	//			const Vec3 &v1 = _vertices[_indices[i + 1]];
-	//			const Vec3 &v2 = _vertices[_indices[i + 2]];
-	//			areas.push_back(triangle_area(v0, v1, v2));
-	//		}
-	//		_areaUniformSampler = std::unique_ptr<AreaUniformSampler>(new AreaUniformSampler(areas));
-	//		_bvh = std::unique_ptr<BVH>(new BVH(_vertices, _indices));
-	//	}
-
-	//	bool intersect(const Ray &ray, Material *mat, Intersection *intersection, TracingContext &context, double *tmin) const override {
-	//		BVHIntersection thisIntersection;
-	//		if (_bvh->intersect(ray, &thisIntersection, tmin)) {
-	//			*mat = _material;
-
-	//			if (_backEmissive == false && thisIntersection.isBack) {
-	//				if (_material.is<LambertianMaterial>()) {
-	//					auto m = _material.get<LambertianMaterial>();
-	//					m.Le = Vec3(0.0);
-	//					*mat = m;
-	//				}
-	//			}
-
-	//			*intersection = thisIntersection;
-	//			return true;
-	//		}
-	//		return false;
-	//	}
-
-	//	double emissiveArea() const override {
-	//		if (_material.is<LambertianMaterial>()) {
-	//			auto mat = _material.get<LambertianMaterial>();
-	//			if (mat.isEmissive()) {
-	//				if (_backEmissive) {
-	//					return _areaUniformSampler->area() * 2.0;
-	//				}
-	//				return _areaUniformSampler->area();
-	//			}
-	//		}
-	//		return 0.0;
-	//	}
-
-	//	void sampleEmissive(Vec3 *p, Vec3 *n, Vec3 *emissiveRadiance, PeseudoRandom *random) const override {
-	//		int index = _areaUniformSampler->sample(random);
-
-	//		auto p0 = _vertices[_indices[index * 3]];
-	//		auto p1 = _vertices[_indices[index * 3 + 1]];
-	//		auto p2 = _vertices[_indices[index * 3 + 2]];
-	//		*p = uniform_on_triangle(random,
-	//			p0,
-	//			p1,
-	//			p2
-	//		);
-	//		if (_backEmissive) {
-	//			*n = triangle_normal(p0, p1, p2, random->uniform() < 0.5);
-	//		}
-	//		else {
-	//			*n = triangle_normal(p0, p1, p2, false);
-	//		}
-
-	//		if (_material.is<LambertianMaterial>()) {
-	//			*emissiveRadiance = _material.get<LambertianMaterial>().Le;
-	//		}
-	//		else {
-	//			assert(0);
-	//		}
-	//	}
-	//	void drawPreview(std::function<void(const Vec3 &, const Vec3 &)> drawLine) const override {
-	//		for (int i = 0; i < _indices.size(); i += 3) {
-	//			const Vec3 &v0 = _vertices[_indices[i + 0]];
-	//			const Vec3 &v1 = _vertices[_indices[i + 1]];
-	//			const Vec3 &v2 = _vertices[_indices[i + 2]];
-	//			drawLine(v0, v1);
-	//			drawLine(v1, v2);
-	//			drawLine(v2, v0);
-	//		}
-	//	}
-	//	std::unique_ptr<BVH> _bvh;
-	//	std::vector<Vec3> _vertices;
-	//	std::vector<int> _indices;
-
-	//	Material _material;
-
-	//	// 両面の対応はすべてSceneElementの中で対応可能
-	//	bool _backEmissive = false;
-
-	//	// ライトサンプル用
-	//	std::unique_ptr<AreaUniformSampler> _areaUniformSampler;
-	//};
-
-
-	//class BezierSceneElement : public SceneElement {
-	//public:
-	//	inline Vec3 uniform_on_unit_sphere(Halton_sampler *sampler, int *index) {
-	//		Vec3 d;
-	//		double sq = 0.0;
-	//		do {
-	//			d.x = glm::mix(-1.0, 1.0, sampler->sample(1, *index));
-	//			d.y = glm::mix(-1.0, 1.0, sampler->sample(2, *index));
-	//			d.z = glm::mix(-1.0, 1.0, sampler->sample(3, *index));
-
-	//			(*index)++;
-
-	//			sq = glm::length2(d);
-	//		} while (sq < 0.0001 || 1.0 < sq);
-	//		d /= glm::sqrt(sq);
-	//		return d;
-	//	}
-
-	//	//inline std::vector<BezierCurve3D> basic_mofumofu() {
-	//	//	static float fur_length = 0.15f;
-	//	//	static float fur_softness = 1.0;
-
-	//	//	Halton_sampler sampler;
-	//	//	std::mt19937 engine = std::mt19937(3);
-	//	//	sampler.init_random(engine);
-
-	//	//	double scale = fur_length;
-	//	//	double softness = fur_softness;
-
-	//	//	std::vector<BezierCurve3D> r;
-	//	//	int sampler_index = 0;
-	//	//	rt::Xor random;
-	//	//	for (int i = 0; i < 4000; ++i) {
-	//	//		Vec3 n;
-	//	//		n = uniform_on_unit_sphere(&sampler, &sampler_index);
-	//	//		auto p = n * 0.4;
-
-	//	//		auto r_axis = glm::normalize(glm::cross(Vec3(0.0, 1.0, 0.0), n));
-	//	//		auto d = glm::pow(1.0 - glm::abs(-n.y), 0.7);
-	//	//		auto rotation = d * softness;
-	//	//		auto rn = glm::rotate(n, d * softness, r_axis) * 0.5;
-	//	//		double sss = random.uniform(0.7, 1.4);
-	//	//		Vec3 ofs(random.uniform(-0.05, 0.05), random.uniform(-0.05, 0.05), random.uniform(-0.05, 0.05));
-	//	//		BezierCurve3D bz(
-	//	//			p,
-	//	//			p + (n * 0.1) * scale * sss,
-	//	//			p + (n - rn * 0.2) * scale * sss,
-	//	//			p + (n + rn) * scale * sss + ofs
-	//	//		);
-	//	//		r.push_back(bz);
-	//	//	}
-	//	//	return r;
-	//	//}
-	//	inline std::vector<BezierQuadratic3D> basic_mofumofu() {
-	//		static float fur_length = 0.15f;
-	//		static float fur_softness = 1.0;
-
-	//		Halton_sampler sampler;
-	//		std::mt19937 engine = std::mt19937(3);
-	//		sampler.init_random(engine);
-
-	//		double scale = fur_length;
-	//		double softness = fur_softness;
-
-	//		std::vector<BezierQuadratic3D> r;
-	//		int sampler_index = 0;
-	//		rt::Xor random;
-	//		for (int i = 0; i < 4000; ++i) {
-	//			Vec3 n;
-	//			n = uniform_on_unit_sphere(&sampler, &sampler_index);
-	//			auto p = n * 0.4;
-
-	//			auto r_axis = glm::normalize(glm::cross(Vec3(0.0, 1.0, 0.0), n));
-	//			auto d = glm::pow(1.0 - glm::abs(-n.y), 0.7);
-	//			auto rotation = d * softness;
-	//			auto rn = glm::rotate(n, d * softness, r_axis) * 0.5;
-	//			double sss = random.uniform(0.7, 1.4);
-	//			Vec3 ofs(random.uniform(-0.05, 0.05), random.uniform(-0.05, 0.05), random.uniform(-0.05, 0.05));
-	//			BezierQuadratic3D bz(
-	//				p,
-	//				p + (n - rn * 0.2) * scale * sss,
-	//				p + (n + rn) * scale * sss + ofs
-	//			);
-	//			r.push_back(bz);
-	//		}
-	//		return r;
-	//	}
-
-	//	BezierSceneElement() {
-	//		auto curves = basic_mofumofu();
-	//		std::vector<int> ids;
-	//		for (int i = 0; i < curves.size(); ++i) {
-	//			ids.push_back(i);
-	//		}
-	//		_bezier = std::shared_ptr<BezierBVH>(new BezierBVH(curves, ids, _radius));
-	//	}
-
-	//	bool intersect(const Ray &ray, Material *mat, Intersection *intersection, TracingContext &context, double *tmin) const override {
-	//		// TODO 本当はだめ
-	//		int skipindex = context.is<TracingContextBezier>() ? context.get<TracingContextBezier>().index : -1;
-	//		//if (skipindex != -1) {
-	//		//	return false;
-	//		//}
-
-	//		bool intersected = false;
-	//		BzBVHIntersection thisIntersection;
-	//		if (_bezier->intersect(ray, &thisIntersection, skipindex, tmin)) {
-	//			intersected = true;
-
-	//			TracingContextBezier ctx;
-	//			ctx.index = thisIntersection.identifer;
-	//			context = ctx;
-
-	//			// * thisIntersection.closest_t
-	//			HairFurMaterial m;
-	//			m.h = glm::sqrt(thisIntersection.hSq) / (_radius );
-
-	//			if (thisIntersection.isRhs) {
-	//				m.h = -m.h;
-	//			}
-
-	//			m.tangent = _bezier->_curves[thisIntersection.identifer].tangent(thisIntersection.closest_t);
-	//			m.tangent = glm::normalize(m.tangent);
-	//			*mat = m;
-	//			// *mat = LambertianMaterial(rt::Vec3(), rt::Vec3(0.8, 0.1, 0.1));
-
-	//			Intersection thisIntersection;
-	//			thisIntersection.isBack = false;
-	//			thisIntersection.normal = -ray.d;
-	//			*intersection = thisIntersection;
-	//		}
-	//		else {
-	//			context = TracingContextBezier();
-	//		}
-	//		return intersected;
-	//	}
-
-	//	double emissiveArea() const override {
-	//		return 0.0;
-	//	}
-
-	//	void sampleEmissive(Vec3 *p, Vec3 *n, Vec3 *emissiveRadiance, PeseudoRandom *random) const override {
-	//		assert(0);
-	//	}
-	//	void drawPreview(std::function<void(const Vec3 &, const Vec3 &)> drawLine) const override {
-	//		//for (int i = 0; i < _indices.size(); i += 3) {
-	//		//	const Vec3 &v0 = _vertices[_indices[i + 0]];
-	//		//	const Vec3 &v1 = _vertices[_indices[i + 1]];
-	//		//	const Vec3 &v2 = _vertices[_indices[i + 2]];
-	//		//	drawLine(v0, v1);
-	//		//	drawLine(v1, v2);
-	//		//	drawLine(v2, v0);
-	//		//}
-	//	}
-	//	double _radius = 0.004;
-	//	std::shared_ptr<BezierBVH> _bezier;
-	//};
-
 	// ここでは球は内側に発光しない
 	class SphereSceneElement : public SceneElement {
 	public:
@@ -890,6 +634,39 @@ namespace rt {
 				Vec3 d1(0.0, glm::cos(step_theta * (i + 1)), glm::sin(step_theta * (i + 1)));
 				drawLine(_sphere.center + d0 * _sphere.radius, _sphere.center + d1 * _sphere.radius);
 			}
+		}
+	};
+
+	class ConeSceneElement : public SceneElement {
+	public:
+		ConeSceneElement() {}
+		ConeSceneElement(const TruncatedCone &cone, Material material) :_cone(cone), _material(material) {}
+		TruncatedCone _cone;
+		Material _material;
+
+		bool intersect(const Ray &ray, Material *mat, Intersection *intersection, double *tmin) const override {
+			Vec3 n;
+			if (intersect_cone(ray.o, ray.d, _cone, tmin, &n)) {
+				*mat = _material;
+
+				Intersection isect;
+				isect.isBack = false;
+				isect.normal = n;
+				*intersection = isect;
+				return true;
+			}
+			return false;
+		}
+
+		double emissiveArea() const override {
+			return 0.0;
+		}
+
+		void sampleEmissive(Vec3 *p, Vec3 *n, Vec3 *emissiveRadiance, PeseudoRandom *random) const override {
+			assert(0);
+		}
+		void drawPreview(std::function<void(const Vec3 &, const Vec3 &)> drawLine) const override {
+
 		}
 	};
 
