@@ -266,15 +266,15 @@ void ofApp::setup() {
 
 	rt::Material meshMat = rt::LambertianMaterial(rt::Vec3(0.0), rt::Vec3(0.5));
 	// rt::Material meshMat = rt::SpecularMaterial();
-	//std::shared_ptr<rt::SphereSceneElement> element(new rt::SphereSceneElement(rt::Sphere(rt::Vec3(0.0, -0.6, 0.0), 0.4), meshMat));
-	//_scene = _scene->addElement(element);
-	rt::TruncatedCone cone;
-	cone.p = rt::Vec3(0.0, -1.0, 0.0);
-	cone.p_radius = 0.5f;
-	cone.q = rt::Vec3(0.0, -0.8f, 0.0);
-	cone.q_radius = 0.8f;
-	std::shared_ptr<rt::ConeSceneElement> element(new rt::ConeSceneElement(cone, meshMat));
+	std::shared_ptr<rt::SphereSceneElement> element(new rt::SphereSceneElement(rt::Sphere(rt::Vec3(0.0, -0.6, 0.0), 0.4), meshMat));
 	_scene = _scene->addElement(element);
+	//rt::TruncatedCone cone;
+	//cone.p = rt::Vec3(-0.2, -0.2, 0.2);
+	//cone.p_radius = 0.5f;
+	//cone.q = rt::Vec3(0.1, -0.3, 0.0);
+	//cone.q_radius = 0.6f;
+	//std::shared_ptr<rt::ConeSceneElement> element(new rt::ConeSceneElement(cone, meshMat));
+	//_scene = _scene->addElement(element);
 
 	_pt = std::shared_ptr<rt::PathTracer>(new rt::PathTracer(_scene));
 }
