@@ -29,7 +29,9 @@ namespace rt {
 		double t;
 		bool isect = false;
 
-		t = (-b + sqrt(D)) / (2.0 * a);
+		double sqrt_D = std::sqrt(D);
+
+		t = (-b + sqrt_D) / (2.0 * a);
 		if (0.0 < t && t < *tmin) {
 			double y = o.y + d.y * t;
 			if (cone.min_h <= y && y <= cone.max_h) {
@@ -38,7 +40,7 @@ namespace rt {
 			}
 		}
 
-		t = (-b - sqrt(D)) / (2.0 * a);
+		t = (-b - sqrt_D) / (2.0 * a);
 		if (0.0 < t && t < *tmin) {
 			double y = o.y + d.y * t;
 			if (cone.min_h <= y && y <= cone.max_h) {
@@ -52,10 +54,10 @@ namespace rt {
 
 	// 円錐の方程式の、(∂u/∂x, ∂u/∂y, ∂u/∂z)
 	inline Vec3 gradient_cone(Vec3 p, Cone cone) {
-		// D[(h*x/r)^2 +(h*z/r)^2 - (y-h)^2, x]
-		double dudx = 2.0 * cone.h * cone.h * p.x / (cone.r * cone.r);
+		double hh_over_rr = cone.h * cone.h / (cone.r * cone.r);
+		double dudx = 2.0 * hh_over_rr * p.x;
 		double dudy = 2.0 * (cone.h - p.y);
-		double dudz = 2.0 * cone.h * cone.h * p.z / (cone.r * cone.r);
+		double dudz = 2.0 * hh_over_rr * p.z;
 		return Vec3(dudx, dudy, dudz);
 	}
 
