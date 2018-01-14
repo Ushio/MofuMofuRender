@@ -46,7 +46,7 @@ namespace rt {
 	inline Vec3 radiance(std::shared_ptr<rt::Scene> scene, Ray ray, PeseudoRandom *random) {
 		Vec3 Lo;
 		Vec3 T(1.0);
-		for (int i = 0; i < 10; ++i) {
+		for (int i = 0; i < 1; ++i) {
 			Material mat;
 			Intersection intersection;
 			double tmin = std::numeric_limits<double>::max();

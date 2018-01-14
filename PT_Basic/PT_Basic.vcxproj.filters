@@ -107,6 +107,9 @@
     <ClInclude Include="src\path_tracing.hpp">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="src\light_tracing.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="icon.rc" />

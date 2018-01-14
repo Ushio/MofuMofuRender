@@ -232,113 +232,335 @@ namespace rt {
 	};
 
 
+	//struct CameraSetting {
+	//	double _fov = glm::radians(45.0);
+
+	//	Vec3 _eye = Vec3(0.0, 0.0, 1.0);
+	//	Vec3 _lookat = Vec3(0.0, 0.0, 0.0);
+	//	Vec3 _up = Vec3(0.0, 1.0, 0.0);
+
+	//	int _imageWidth = 1024;
+	//	int _imageHeight = 768;
+
+	//	double _lensRadius = 0.1;
+	//	double _focalLength = 3.0;
+	//};
+
+	//class PinholeCamera {
+	//public:
+	//	PinholeCamera(CameraSetting setting) {
+	//		_setting = setting;
+
+	//		double w = _setting._imageWidth;
+	//		double h = _setting._imageHeight;
+	//		_proj = glm::perspectiveFov(_setting._fov, w, h, 1.0, 100.0);
+
+	//		auto vp = Vec4(0.0, 0.0, w - 1, h - 1);
+	//		_origin = _setting._eye;
+
+	//		_view = glm::lookAt(_setting._eye, _setting._lookat, _setting._up);
+
+	//		_UL = glm::unProject(Vec3(0.0, h - 1, 0.0), _view, _proj, vp);
+	//		auto r = glm::unProject(Vec3(w - 1, h - 1, 0.0), _view, _proj, vp);
+	//		auto b = glm::unProject(Vec3(0.0, 0.0, 0.0), _view, _proj, vp);
+
+
+	//		_dirRight = r - _UL;
+	//		_dirBottom = b - _UL;
+	//		_dirFront = glm::normalize(glm::cross(_dirRight, _dirBottom));
+	//	}
+
+	//	Ray generateRay(double filmx, double filmy) const {
+	//		Ray ray;
+	//		ray.d = glm::normalize(_UL + _dirRight * (filmx / (_setting._imageWidth - 1)) + _dirBottom * (filmy / (_setting._imageHeight - 1)) - _origin);
+	//		ray.o = _origin;
+	//		return ray;
+	//	}
+
+	//	// レンズの後ろの座標
+	//	Vec3 filmToWorld(double filmx, double filmy) const {
+	//		auto ul = _UL + 2.0 * (_origin - _UL);
+	//		return ul - _dirRight * (filmx / (_setting._imageWidth - 1)) - _dirBottom * (filmy / (_setting._imageHeight - 1));
+	//	}
+
+	//	int imageWidth() const {
+	//		return _setting._imageWidth;
+	//	}
+	//	int imageHeight() const {
+	//		return _setting._imageHeight;
+	//	}
+
+	//	Vec3 front() const {
+	//		return _dirFront;
+	//	}
+	//	Vec3 origin() const {
+	//		return _origin;
+	//	}
+
+	//	// {filmx, fimly}
+	//	// ピクセル座標へ
+	//	Vec2 projectToFilm(Vec3 p) const {
+	//		auto vp = Vec4(0.0, 0.0, _setting._imageWidth - 1, _setting._imageHeight - 1);
+	//		auto projected = Vec2(glm::project(p, _view, _proj, vp));
+	//		projected.y = _setting._imageHeight - projected.y - 1;
+	//		return projected;
+	//	}
+	//	double filmArea() const {
+	//		return glm::length(_dirRight) * glm::length(_dirBottom);
+	//	}
+	//	double lensArea() const {
+	//		return glm::pi<double>() * _setting._lensRadius * _setting._lensRadius;
+	//	}
+
+	//	// (u, v)が対象のピクセルインデックス
+	//	// h(x, y)を返す
+	//	double filter(double x, double y, int u, int v) const {
+	//		double value = _setting._imageWidth * _setting._imageHeight / filmArea();
+	//		return glm::abs(x - u) < 0.5 && glm::abs(y - v) < 0.5 ? value : 0.0;
+	//	}
+
+	//	Vec3 sampleLens(PeseudoRandom *random) const {
+	//		double r = _setting._lensRadius;
+	//		Vec3 xaxis = r * glm::normalize(_dirRight);
+	//		Vec3 yaxis = r * glm::normalize(-_dirBottom);
+	//		auto xy = uniform_in_unit_circle(random);
+	//		return origin() + xaxis * xy.x + yaxis * xy.y;
+	//	}
+
+	//	CameraSetting _setting;
+
+	//	Mat4 _proj;
+	//	Mat4 _view;
+
+	//	Vec3 _origin;
+
+	//	Vec3 _UL;
+	//	Vec3 _dirRight;
+	//	Vec3 _dirBottom;
+	//	Vec3 _dirFront;  /* normalized */
+	//};
+
+
+	// Plane equation
+	// d = dot(n, p) for a given point p on the plane
+	struct Plane {
+		Vec3 n;
+		double d = 0.0;
+	};
+	inline Plane plane_from(const Vec3 &n, const Vec3 &p) {
+		Plane plane;
+		plane.n = n;
+		plane.d = glm::dot(plane.n, p);
+		return plane;
+	}
+
+	// 光線の後ろ側も有効なのに注意
+	// tminは見ない
+	inline bool intersect_ray_plane(const Vec3 &o, const Vec3 &d, const Plane &plane, double *tmin)
+	{
+		double eps = 1.0e-9;
+		double denom = glm::dot(plane.n, d);
+		if (std::fabs(denom) < eps) {
+			return false;
+		}
+		*tmin = (plane.d - glm::dot(plane.n, o)) / denom;
+		return true;
+	}
+
+	//inline Vec2 uniform_in_unit_circle(PeseudoRandom *random) {
+	//	Vec2 d;
+	//	double sq = 0.0;
+	//	do {
+	//		d.x = random->uniform(-1.0, 1.0);
+	//		d.y = random->uniform(-1.0, 1.0);
+	//		sq = glm::length2(d);
+	//	} while (1.0 < sq);
+	//	return d;
+	//}
+
 	struct CameraSetting {
-		double _fov = glm::radians(45.0);
+		double fovy = glm::radians(45.0);
 
-		Vec3 _eye = Vec3(0.0, 0.0, 1.0);
-		Vec3 _lookat = Vec3(0.0, 0.0, 0.0);
-		Vec3 _up = Vec3(0.0, 1.0, 0.0);
+		Vec3 eye = Vec3(0.0, 0.0, 1.0);
+		Vec3 lookat = Vec3(0.0, 0.0, 0.0);
+		Vec3 up = Vec3(0.0, 1.0, 0.0);
 
-		int _imageWidth = 1024;
-		int _imageHeight = 768;
+		int imageWidth = 4;
+		int imageHeight = 3;
 
-		double _lensRadius = 0.1;
-		double _focalLength = 3.0;
+		double lensRadius = 0.1;
+		double focalLength = 3.0;
+
+		double tanThetaH() const {
+			return std::tan(fovy * 0.5);
+		}
+		double distanceS() const {
+			return imageHeight / (2.0 * tanThetaH());
+		}
+		double tanThetaV() const {
+			return (double)imageWidth * 0.5 / distanceS();
+		}
+
+		double widthV() const {
+			// 相似関係より
+			return imageWidth * focalLength / distanceS();
+		}
+		double heightV() const {
+			return imageHeight * focalLength / distanceS();
+		}
 	};
 
-	class PinholeCamera {
+	class Camera {
 	public:
-		PinholeCamera(CameraSetting setting) {
-			_setting = setting;
+		Camera(const CameraSetting &setting) :_setting(setting) {
+			_view = glm::lookAt(_setting.eye, _setting.lookat, _setting.up);
+			_viewInverse = glm::inverse(_view);
 
-			double w = _setting._imageWidth;
-			double h = _setting._imageHeight;
-			_proj = glm::perspectiveFov(_setting._fov, w, h, 1.0, 100.0);
+			Mat3 r(_viewInverse);
+			_right = r[0];
+			_up = r[1];
+			_back = r[2];
 
-			auto vp = Vec4(0.0, 0.0, w - 1, h - 1);
-			_origin = _setting._eye;
-
-			_view = glm::lookAt(_setting._eye, _setting._lookat, _setting._up);
-
-			_UL = glm::unProject(Vec3(0.0, h - 1, 0.0), _view, _proj, vp);
-			auto r = glm::unProject(Vec3(w - 1, h - 1, 0.0), _view, _proj, vp);
-			auto b = glm::unProject(Vec3(0.0, 0.0, 0.0), _view, _proj, vp);
-
-
-			_dirRight = r - _UL;
-			_dirBottom = b - _UL;
-			_dirFront = glm::normalize(glm::cross(_dirRight, _dirBottom));
+			_planeV = plane_from(front(), origin() + front() * setting.focalLength);
 		}
 
-		Ray generateRay(double filmx, double filmy) const {
-			Ray ray;
-			ray.d = glm::normalize(_UL + _dirRight * (filmx / (_setting._imageWidth - 1)) + _dirBottom * (filmy / (_setting._imageHeight - 1)) - _origin);
-			ray.o = _origin;
-			return ray;
+		Mat4 view() const {
+			return _view;
+		}
+		Mat4 viewInverse() const {
+			return _viewInverse;
+		}
+		Vec3 origin() const {
+			return _viewInverse[3];
+		}
+		Vec3 front() const {
+			return -_back;
+		}
+		Vec3 back() const {
+			return _back;
 		}
 
-		// レンズの後ろの座標
-		Vec3 filmToWorld(double filmx, double filmy) const {
-			auto ul = _UL + 2.0 * (_origin - _UL);
-			return ul - _dirRight * (filmx / (_setting._imageWidth - 1)) - _dirBottom * (filmy / (_setting._imageHeight - 1));
+		Vec3 right() const {
+			return _right;
+		}
+		Vec3 left() const {
+			return -_right;
+		}
+
+		Vec3 up() const {
+			return _up;
+		}
+		Vec3 down() const {
+			return -_up;
 		}
 
 		int imageWidth() const {
-			return _setting._imageWidth;
+			return _setting.imageWidth;
 		}
 		int imageHeight() const {
-			return _setting._imageHeight;
+			return _setting.imageHeight;
 		}
 
-		Vec3 front() const {
-			return _dirFront;
-		}
-		Vec3 origin() const {
-			return _origin;
+		CameraSetting setting() const {
+			return _setting;
 		}
 
-		// {filmx, fimly}
-		// ピクセル座標へ
-		Vec2 projectToFilm(Vec3 p) const {
-			auto vp = Vec4(0.0, 0.0, _setting._imageWidth - 1, _setting._imageHeight - 1);
-			auto projected = Vec2(glm::project(p, _view, _proj, vp));
-			projected.y = _setting._imageHeight - projected.y - 1;
-			return projected;
-		}
-		double filmArea() const {
-			return glm::length(_dirRight) * glm::length(_dirBottom);
-		}
-		double lensArea() const {
-			return glm::pi<double>() * _setting._lensRadius * _setting._lensRadius;
-		}
-
-		// (u, v)が対象のピクセルインデックス
-		// h(x, y)を返す
-		double filter(double x, double y, int u, int v) const {
-			double value = _setting._imageWidth * _setting._imageHeight / filmArea();
-			return glm::abs(x - u) < 0.5 && glm::abs(y - v) < 0.5 ? value : 0.0;
-		}
-
+		// ちょっと下と処理が重複
 		Vec3 sampleLens(PeseudoRandom *random) const {
-			double r = _setting._lensRadius;
-			Vec3 xaxis = r * glm::normalize(_dirRight);
-			Vec3 yaxis = r * glm::normalize(-_dirBottom);
-			auto xy = uniform_in_unit_circle(random);
-			return origin() + xaxis * xy.x + yaxis * xy.y;
+			Vec2 sample = uniform_in_unit_circle(random);
+			double r = setting().lensRadius;
+			return origin() + r * right() * sample.x + r * down() * sample.y;
+		}
+
+		void sampleRay(PeseudoRandom *random, int x, int y, Vec3 *o, Vec3 *d) const {
+			Vec2 sample = uniform_in_unit_circle(random);
+			double r = setting().lensRadius;
+			Vec3 sampleLens = origin() + r * right() * sample.x + r * down() * sample.y;
+
+			auto focalPlaneCenter = origin() + front() * setting().focalLength;
+
+			auto width = setting().widthV();
+			auto height = setting().heightV();
+
+			Vec3 LT = focalPlaneCenter
+				+ left() * width * 0.5
+				+ up() * height * 0.5;
+
+			double stepPixel = width / setting().imageWidth;
+
+			Vec3 PixelLT = LT + stepPixel * right() * (double)x + stepPixel * down() * (double)y;
+			Vec3 sampleFocalPlane = PixelLT
+				+ right() * random->uniform() * stepPixel
+				+ down() * random->uniform() * stepPixel;
+
+			*o = sampleLens;
+			*d = glm::normalize(sampleFocalPlane - sampleLens);
+		}
+		double lensPDF() const {
+			double r = _setting.lensRadius;
+			return 1.0 / (glm::pi<double>() * r * r);
+		}
+
+		Plane planeV() const {
+			return _planeV;
+		}
+		bool findPixel(const Vec3 &o, const Vec3 &d, int *x, int *y) const {
+			// 逆向きの光線は無視
+			if (0.0 < glm::dot(d, front())) {
+				return false;
+			}
+
+			double tmin = std::numeric_limits<double>::max();
+			if (intersect_ray_plane(o, d, planeV(), &tmin)) {
+				Vec3 Vp = o + tmin * d;
+
+				auto focalPlaneCenter = origin() + front() * setting().focalLength;
+				auto width = setting().widthV();
+				auto height = setting().heightV();
+
+				Vec3 LT = focalPlaneCenter
+					+ left() * width * 0.5
+					+ up() * height * 0.5;
+
+				Vec3 dir = Vp - LT;
+				double Vx = glm::dot(dir, right());
+				double Vy = glm::dot(dir, down());
+
+				double stepPixel = width / setting().imageWidth;
+				int at_x = (int)floor(Vx / stepPixel);
+				int at_y = (int)floor(Vy / stepPixel);
+				if (0 <= at_x && at_x < setting().imageWidth) {
+					if (0 <= at_y && at_y < setting().imageHeight) {
+						*x = at_x;
+						*y = at_y;
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
+		// 未テスト
+		double Wi(const Vec3 &x0, const Vec3 &x1, const Vec3 &n1) const {
+			Vec3 x1_to_x0 = x0 - x1;
+			Vec3 x0_to_x1 = -x1_to_x0;
+			double G = glm::dot(front(), glm::normalize(x0_to_x1)) * glm::dot(n1, glm::normalize(x1_to_x0)) / glm::length2(x0_to_x1);
+			double c = glm::dot(n1, x1_to_x0) / std::pow(glm::dot(front(), x0_to_x1), 3.0);
+			double sigma = imageWidth() * imageHeight() / (4.0 * setting().tanThetaV() * setting().tanThetaH());
+			return 1.0 / G * c * sigma * lensPDF() * 1.0;
 		}
 
 		CameraSetting _setting;
-
-		Mat4 _proj;
 		Mat4 _view;
+		Mat4 _viewInverse;
 
-		Vec3 _origin;
+		Vec3 _right;
+		Vec3 _up;
+		Vec3 _back;
 
-		Vec3 _UL;
-		Vec3 _dirRight;
-		Vec3 _dirBottom;
-		Vec3 _dirFront;  /* normalized */
+		Plane _planeV;
 	};
+
 
 	class SceneElement {
 	public:
@@ -675,7 +897,7 @@ namespace rt {
 		Scene(const CameraSetting &cameraSetting, const std::vector<std::shared_ptr<SceneElement>> &sceneElements)
 		:_cameraSetting(cameraSetting)
 		,_sceneElements(sceneElements)
-		,_camera(new PinholeCamera(cameraSetting)) {
+		,_camera(new Camera(cameraSetting)) {
 			for (int i = 0; i < _sceneElements.size(); ++i) {
 				if (glm::epsilon<double>() <= _sceneElements[i]->emissiveArea()) {
 					_emissiveElements.push_back(_sceneElements[i]);
@@ -749,51 +971,52 @@ namespace rt {
 		}
 
 		void drawPreview(std::function<void(const Vec3 &, const Vec3 &)> drawLine) const {
-			{
-				auto ray = _camera->generateRay(0, 0);
-				drawLine(ray.o, ray.o + ray.d * 100.0);
-			}
-			{
-				auto ray = _camera->generateRay(0, _cameraSetting._imageHeight);
-				drawLine(ray.o, ray.o + ray.d * 100.0);
-			}
-			{
-				auto ray = _camera->generateRay(_cameraSetting._imageWidth - 1, 0);
-				drawLine(ray.o, ray.o + ray.d * 100.0);
-			}
-			{
-				auto ray = _camera->generateRay(_cameraSetting._imageWidth, _cameraSetting._imageHeight - 1);
-				drawLine(ray.o, ray.o + ray.d * 100.0);
-			}
+			//{
+			//	auto ray = _camera->generateRay(0, 0);
+			//	drawLine(ray.o, ray.o + ray.d * 100.0);
+			//}
+			//{
+			//	auto ray = _camera->generateRay(0, _cameraSetting._imageHeight);
+			//	drawLine(ray.o, ray.o + ray.d * 100.0);
+			//}
+			//{
+			//	auto ray = _camera->generateRay(_cameraSetting._imageWidth - 1, 0);
+			//	drawLine(ray.o, ray.o + ray.d * 100.0);
+			//}
+			//{
+			//	auto ray = _camera->generateRay(_cameraSetting._imageWidth, _cameraSetting._imageHeight - 1);
+			//	drawLine(ray.o, ray.o + ray.d * 100.0);
+			//}
+			//{
+			//	drawLine(_camera->_UL, _camera->_UL + _camera->_dirRight);
+			//	drawLine(_camera->_UL, _camera->_UL + _camera->_dirBottom);
+			//}
 
-			{
-				drawLine(_camera->_UL, _camera->_UL + _camera->_dirRight);
-				drawLine(_camera->_UL, _camera->_UL + _camera->_dirBottom);
-			}
-
-			{
-				double r = _camera->_setting._lensRadius;
-				Vec3 xaxis = r * glm::normalize(_camera->_dirRight);
-				Vec3 yaxis = r * glm::normalize(-_camera->_dirBottom);
-				double step_theta = glm::two_pi<double>() / 20.0;
-				for (int i = 0; i < 20; ++i) {
-					
-					auto p1 = _camera->origin() + xaxis * glm::cos(step_theta * i) + yaxis * glm::sin(step_theta * i);
-					auto p2 = _camera->origin() + xaxis * glm::cos(step_theta * (i + 1)) + yaxis * glm::sin(step_theta * (i + 1));
-					drawLine(p1, p2);
-				}
-			}
+			//{
+			//	double r = _camera->_setting._lensRadius;
+			//	Vec3 xaxis = r * glm::normalize(_camera->_dirRight);
+			//	Vec3 yaxis = r * glm::normalize(-_camera->_dirBottom);
+			//	double step_theta = glm::two_pi<double>() / 20.0;
+			//	for (int i = 0; i < 20; ++i) {
+			//		
+			//		auto p1 = _camera->origin() + xaxis * glm::cos(step_theta * i) + yaxis * glm::sin(step_theta * i);
+			//		auto p2 = _camera->origin() + xaxis * glm::cos(step_theta * (i + 1)) + yaxis * glm::sin(step_theta * (i + 1));
+			//		drawLine(p1, p2);
+			//	}
+			//}
 
 			for (int i = 0; i < _sceneElements.size(); ++i) {
 				_sceneElements[i]->drawPreview(drawLine);
 			}
 		}
-		std::shared_ptr<const PinholeCamera> camera() const {
+		//std::shared_ptr<const PinholeCamera> camera() const {
+		//	return _camera;
+		//}
+		std::shared_ptr<const Camera> camera() const {
 			return _camera;
 		}
-
 		CameraSetting _cameraSetting;
-		std::shared_ptr<PinholeCamera> _camera;
+		std::shared_ptr<Camera> _camera;
 		std::vector<std::shared_ptr<SceneElement>> _sceneElements;
 
 		// ライトサンプル用

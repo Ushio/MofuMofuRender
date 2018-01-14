@@ -5,7 +5,8 @@
 
 #include "scene.hpp"
 #include "conelbox.hpp"
-#include "path_tracing.hpp"
+// #include "path_tracing.hpp"
+#include "light_tracing.hpp"
 #include "stopwatch.hpp"
 #include "transform.hpp"
 
